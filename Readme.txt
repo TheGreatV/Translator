@@ -9,6 +9,9 @@ Stores intermediate files for specific environment
 Media:
 Files, which are used by applications in runtime
 
+Source:
+Contain source files for specific project
+
 Samples:
 Code samples
 
