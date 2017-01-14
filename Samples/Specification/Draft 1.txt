@@ -1,0 +1,32 @@
+Alphabet:
+<Digit> = "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9";
+<Letter> = "a" - "z" | "A" - "Z";
+<Glyph> = <Letter> | <Digit> | "_";
+<Symbol> = "~" | "@" | "#" | "$" | "%" | "^" | "&" | "*" | "-" | "+" | "<" | ">" | "?" | "/" | "|" | "\";
+
+
+Identifier:
+<Identifier> = (<Glyph> {<Glyph>}) | (<Symbol> {<Symbol>});
+
+
+Keywords:
+<Keyword Block> = ".block";
+<Keyword Alias> = ".alias";
+<Keyword As> = ".as";
+
+
+Block:
+<Block Declaration> = <Unnamed Block Declaration> | <Named Block Declaration>;
+
+<Unnamed Block Declaration> = "{" {<Instruction>} "}";
+<Named Block Declaration> = <Keyword Block> <Identifier> <Unnamed Block Declaration>;
+
+
+Alias:
+<Alias> = <Keyword Alias> <Identifier> <Keyword As> <Identifier>;
+
+
+Instruction:
+<Instruction> = <Block Declaration>;
+
+
