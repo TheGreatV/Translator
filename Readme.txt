@@ -6,6 +6,9 @@ Stores build results
 _Intermediate:
 Stores intermediate files for specific environment
 
+Environments:
+Contains environment-specific files (Visual Studio solutions, etc.)
+
 Media:
 Files, which are used by applications in runtime
 
