@@ -1,0 +1,8 @@
+1. Keywords and identifiers are not intersect
+2. Keywords are not case-sensitive
+3. Any logical object can be named and unnamed
+4. Any logical object can be accessed by alias
+5. Spacing/tabulation/line ending do not affect code meaning
+6. Any scope can ban access to named objects from parent scope
+7. Opening and closing braces for function/methods can have different types (round/figure/square)
+

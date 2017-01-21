@@ -7,6 +7,7 @@ Alphabet:
 
 Identifier:
 <Identifier> = (<Glyph> {<Glyph>}) | (<Symbol> {<Symbol>});
+<Named Object> = <Identifier> | <Block>;
 
 
 Keywords:
@@ -23,7 +24,7 @@ Block:
 
 
 Alias:
-<Alias> = <Keyword Alias> <Identifier> <Keyword As> <Identifier>;
+<Alias> = <Keyword Alias> <Identifier> <Keyword As> <Named Object>;
 
 
 Instruction:
