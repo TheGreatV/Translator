@@ -4,6 +4,16 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 12.0.21005.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Console", "Projects\Console\Console.vcxproj", "{B0A2092B-0637-45B4-A0CD-D2D388A7B273}"
+	ProjectSection(ProjectDependencies) = postProject
+		{0FF34348-4CC2-421F-8329-1FA6FB403063} = {0FF34348-4CC2-421F-8329-1FA6FB403063}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "LexerTesting", "Projects\LexerTesting\LexerTesting.vcxproj", "{FCED34EA-F309-40D3-BD53-E38238AE4A74}"
+	ProjectSection(ProjectDependencies) = postProject
+		{0FF34348-4CC2-421F-8329-1FA6FB403063} = {0FF34348-4CC2-421F-8329-1FA6FB403063}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Translator", "Translator\Translator.vcxproj", "{0FF34348-4CC2-421F-8329-1FA6FB403063}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +25,14 @@ Global
 		{B0A2092B-0637-45B4-A0CD-D2D388A7B273}.Debug|Win32.Build.0 = Debug|Win32
 		{B0A2092B-0637-45B4-A0CD-D2D388A7B273}.Release|Win32.ActiveCfg = Release|Win32
 		{B0A2092B-0637-45B4-A0CD-D2D388A7B273}.Release|Win32.Build.0 = Release|Win32
+		{FCED34EA-F309-40D3-BD53-E38238AE4A74}.Debug|Win32.ActiveCfg = Debug|Win32
+		{FCED34EA-F309-40D3-BD53-E38238AE4A74}.Debug|Win32.Build.0 = Debug|Win32
+		{FCED34EA-F309-40D3-BD53-E38238AE4A74}.Release|Win32.ActiveCfg = Release|Win32
+		{FCED34EA-F309-40D3-BD53-E38238AE4A74}.Release|Win32.Build.0 = Release|Win32
+		{0FF34348-4CC2-421F-8329-1FA6FB403063}.Debug|Win32.ActiveCfg = Debug|Win32
+		{0FF34348-4CC2-421F-8329-1FA6FB403063}.Debug|Win32.Build.0 = Debug|Win32
+		{0FF34348-4CC2-421F-8329-1FA6FB403063}.Release|Win32.ActiveCfg = Release|Win32
+		{0FF34348-4CC2-421F-8329-1FA6FB403063}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
