@@ -242,7 +242,8 @@ namespace Translator
 			{
 				None,
 				Schema, Algorithm,
-				Body
+				Body,
+				Block
 			};
 		public:
 			const Keyword::Type type;
@@ -263,6 +264,7 @@ namespace Translator
 					case Keyword::Type::Schema: return "Schema";
 					case Keyword::Type::Algorithm: return "Algorithm";
 					case Keyword::Type::Body: return "Body";
+					case Keyword::Type::Block: return "Block";
 					default: throw std::exception("Unknown keyword type");
 				}
 			}

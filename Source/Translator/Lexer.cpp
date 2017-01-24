@@ -537,6 +537,13 @@ Translator::TokensVector Translator::Lexer::Parse(const Glyphs& glyphs_)
 						i = j - 1;
 						return;
 					}
+					if(keywordSource == ".block")
+					{
+						auto keyword = MakeReference(new Tokens::Keyword(Tokens::Keyword::Type::Block));
+						tokens.push_back(keyword);
+						i = j - 1;
+						return;
+					}
 
 					auto tokenDot = MakeReference(new Tokens::Special(Tokens::Special::Type::Dot));
 					tokens.push_back(tokenDot);
