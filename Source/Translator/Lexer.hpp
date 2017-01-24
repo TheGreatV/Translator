@@ -1,3 +1,6 @@
+#pragma once
+
+
 #include "Header.hpp"
 
 
@@ -238,6 +241,8 @@ namespace Translator
 			enum class Type
 			{
 				None,
+				Schema, Algorithm,
+				Body
 			};
 		public:
 			const Keyword::Type type;
@@ -255,7 +260,9 @@ namespace Translator
 			{
 				switch(type)
 				{
-					// case Keyword::Type::None: return "None";
+					case Keyword::Type::Schema: return "Schema";
+					case Keyword::Type::Algorithm: return "Algorithm";
+					case Keyword::Type::Body: return "Body";
 					default: throw std::exception("Unknown keyword type");
 				}
 			}
@@ -294,7 +301,7 @@ namespace Translator
 			virtual ~Brace() override = default;
 			inline Brace& operator = (const Brace&) = delete;
 		protected:
-			// TokenVector::iterator SearchEnd(TokenVector& tokens_, TokenVector::iterator it_);
+			// TokensVector::const_iterator SearchEnd(TokensVector& tokens_, TokensVector::const_iterator it_);
 		public:
 			virtual Token::Type GetTokenType() const override
 			{
@@ -365,6 +372,13 @@ namespace Translator
 				return Token::Type::Special;
 			}
 		};
+
+
+		Reference<const Token> RequireToken(const TokensVector& tokens_, TokensVector::const_iterator& it_, Token::Type type_ = Token::Type::None);
+		Reference<const Tokens::Keyword> RequireKeyword(const TokensVector& tokens_, TokensVector::const_iterator& it_, Tokens::Keyword::Type type_ = Tokens::Keyword::Type::None);
+		Reference<const Tokens::Identifier> RequireIdentifier(const TokensVector& tokens_, TokensVector::const_iterator& it_, std::string name_ = "");
+		Reference<const Tokens::Brace> RequireBrace(const TokensVector& tokens_, TokensVector::const_iterator& it_, Tokens::Brace::Type type_, Tokens::Brace::Position position);
+		Reference<const Tokens::Special> RequireSpecial(const TokensVector& tokens_, TokensVector::const_iterator& it_, Tokens::Special::Type type_ = Tokens::Special::Type::None);
 	}
 }
 

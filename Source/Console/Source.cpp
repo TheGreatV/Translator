@@ -2,6 +2,7 @@
 #include <fstream>
 
 #include <Translator/Lexer.hpp>
+#include <Translator/Scaner.hpp>
 using namespace Translator;
 
 
@@ -17,6 +18,8 @@ void main()
 	Lexer lexer;
 	auto tokens = Move(lexer.Parse(source));
 
+	Scaner scaner;
+	auto scope = scaner.Parse(tokens);
 
 	std::system("pause");
 }

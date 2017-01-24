@@ -1,8 +1,12 @@
+#pragma once
+
+
 #include <string>
 #include <memory>
 #include <vector>
 #include <list>
 #include <map>
+#include <algorithm>
 
 
 namespace Translator
@@ -15,6 +19,14 @@ namespace Translator
 	template<class K, class V> using Dictionary = std::map<K, V>;
 
 
+	template<class A, class B> Reference<A> UpCast(const Reference<B>& b)
+	{
+		return std::dynamic_pointer_cast<A>(b);
+	}
+	template<class A, class B> Reference<const A> UpCast(const Reference<const B>& b)
+	{
+		return std::dynamic_pointer_cast<const A>(b);
+	}
 	template<class T> inline T Move(T&& t)
 	{
 		return std::move(t);
@@ -22,6 +34,10 @@ namespace Translator
 	template<class T> inline Reference<T> MakeReference(T* t)
 	{
 		return Reference<T>(t);
+	}
+	template<class T> inline Reference<const T> MakeConstReference(const T* t)
+	{
+		return Reference<const T>(t);
 	}
 
 
@@ -39,6 +55,7 @@ namespace Translator
 		}
 		inline Named(const Named&) = default;
 		inline ~Named() = default;
+		Named& operator = (const Named&) = delete;
 	public:
 		inline Name GetName() const
 		{
@@ -48,5 +65,6 @@ namespace Translator
 }
 
 
-
+#pragma region
+#pragma endregion
 

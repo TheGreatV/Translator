@@ -1,6 +1,115 @@
 #include "Lexer.hpp"
 
 
+Translator::Reference<const Translator::Token> Translator::Tokens::RequireToken(const TokensVector& tokens, Translator::TokensVector::const_iterator& it, Translator::Token::Type type)
+{
+	auto o = it;
+
+	if(it != tokens.end())
+	{
+		auto &token = *it;
+
+		if(type == Translator::Token::Type::None || token->GetTokenType() == type)
+		{
+			++it;
+
+			return token;
+		}
+	}
+
+	it = o;
+	return nullptr;
+}
+Translator::Reference<const Translator::Tokens::Keyword> Translator::Tokens::RequireKeyword(const TokensVector& tokens, Translator::TokensVector::const_iterator& it, Translator::Tokens::Keyword::Type type)
+{
+	auto o = it;
+	auto token = RequireToken(tokens, it, Translator::Token::Type::Keyword);
+
+	if(token)
+	{
+		auto keyword = UpCast<Tokens::Keyword>(token);
+		if(!keyword)
+		{
+			throw std::exception(); // TODO
+		}
+
+		if(type == Translator::Tokens::Keyword::Type::None || keyword->type == type)
+		{
+			return keyword;
+		}
+	}
+
+	it = o;
+	return nullptr;
+}
+Translator::Reference<const Translator::Tokens::Identifier> Translator::Tokens::RequireIdentifier(const TokensVector& tokens, Translator::TokensVector::const_iterator& it, std::string name)
+{
+	auto o = it;
+	auto token = RequireToken(tokens, it, Translator::Token::Type::Identifier);
+
+	if(token)
+	{
+		auto identifier = UpCast<Tokens::Identifier>(token);
+		if(!identifier)
+		{
+			throw std::exception(); // TODO
+		}
+
+		if(name.length() == 0 || identifier->GetName() == name)
+		{
+			return identifier;
+		}
+	}
+
+	it = o;
+	return nullptr;
+}
+Translator::Reference<const Translator::Tokens::Brace> Translator::Tokens::RequireBrace(const TokensVector& tokens, Translator::TokensVector::const_iterator& it, Translator::Tokens::Brace::Type type, Translator::Tokens::Brace::Position position)
+{
+	auto o = it;
+	auto token = RequireToken(tokens, it, Token::Type::Brace);
+
+	if(token)
+	{
+		auto brace = UpCast<Tokens::Brace>(token);
+		if(!brace)
+		{
+			throw std::exception(); // TODO
+		}
+
+		if(brace->type == type && brace->position == position)
+		{
+			return brace;
+		}
+	}
+
+	it = o;
+	return nullptr;
+}
+Translator::Reference<const Translator::Tokens::Special> Translator::Tokens::RequireSpecial(const TokensVector& tokens, Translator::TokensVector::const_iterator& it, Translator::Tokens::Special::Type type)
+{
+	auto o = it;
+	auto token = RequireToken(tokens, it, Translator::Token::Type::Special);
+
+	if(token)
+	{
+		auto special = UpCast<Tokens::Special>(token);
+		if(!special)
+		{
+			throw std::exception(); // TODO
+		}
+
+		if(type == Translator::Tokens::Special::Type::None || type == special->type)
+		{
+			return special;
+		}
+	}
+
+	it = o;
+	return nullptr;
+}
+
+
 bool Translator::Lexer::IsWhitespace(Glyph c)
 {
 	return
@@ -407,6 +516,27 @@ Translator::TokensVector Translator::Lexer::Parse(const Glyphs& glyphs_)
 						i = j - 1;
 						return;
 					}*/
+					if(keywordSource == ".schema")
+					{
+						auto keyword = MakeReference(new Tokens::Keyword(Tokens::Keyword::Type::Schema));
+						tokens.push_back(keyword);
+						i = j - 1;
+						return;
+					}
+					if(keywordSource == ".algorithm")
+					{
+						auto keyword = MakeReference(new Tokens::Keyword(Tokens::Keyword::Type::Algorithm));
+						tokens.push_back(keyword);
+						i = j - 1;
+						return;
+					}
+					if(keywordSource == ".body")
+					{
+						auto keyword = MakeReference(new Tokens::Keyword(Tokens::Keyword::Type::Body));
+						tokens.push_back(keyword);
+						i = j - 1;
+						return;
+					}
 
 					auto tokenDot = MakeReference(new Tokens::Special(Tokens::Special::Type::Dot));
 					tokens.push_back(tokenDot);
