@@ -101,6 +101,21 @@ void Translator::Scaner::SchemaScan_BlockContent(const TokensVector& tokens_, To
 			continue;
 		}
 
+		if(SchemaScan_InstanceDeclaration(tokens_, it_, block_))
+		{
+			auto semicolon = Tokens::RequireSpecial(tokens_, it_, Tokens::Special::Type::Semicolon);
+			if(semicolon)
+			{
+				continue;
+			}
+			else
+			{
+				throw std::exception();
+			}
+		}
+
+		// TODO
+
 		break;
 	}
 }
@@ -198,7 +213,6 @@ void Translator::Scaner::SchemaScan_SchemaContent(const TokensVector& tokens_, T
 	}
 }
 
-
 bool Translator::Scaner::SchemaScan_Body(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Scope>& scope_)
 {
 	auto o = it_;
@@ -272,6 +286,47 @@ bool Translator::Scaner::SchemaScan_BareAlgorithmDeclaration(const TokensVector&
 	if(SchemaScan_Body(tokens_, it_, localScope_))
 	{
 		return true;
+	}
+
+
+	it_ = o;
+	return false;
+}
+
+bool Translator::Scaner::SchemaScan_InstanceDeclaration(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Scope>& scope_)
+{
+	auto o = it_;
+
+
+	auto keywordMake = Tokens::RequireKeyword(tokens_, it_, Tokens::Keyword::Type::Make);
+	if(keywordMake)
+	{
+		auto instanceIdentifier = Tokens::RequireIdentifier(tokens_, it_);
+		if(instanceIdentifier)
+		{
+			auto keywordOf = Tokens::RequireKeyword(tokens_, it_, Tokens::Keyword::Type::Of);
+			if(keywordMake)
+			{
+				if(SchemaScan_Schema(tokens_, it_, scope_))
+				{
+					return true;
+				}
+				else
+				{
+					throw std::exception(); // TODO:
+				}
+			}
+			else
+			{
+				throw std::exception(); // TODO:
+			}
+		}
+		else
+		{
+			throw std::exception(); // TODO:
+		}
+
+		// TODO: .make <type name>
 	}
 
 
@@ -356,6 +411,19 @@ void Translator::Scaner::AlgorithmScan_BlockContent(const TokensVector& tokens_,
 		{
 			// block_->Add(block);
 			continue;
+		}
+
+		if(AlgorithmScan_InstanceDeclaration(tokens_, it_, block_))
+		{
+			auto semicolon = Tokens::RequireSpecial(tokens_, it_, Tokens::Special::Type::Semicolon);
+			if(semicolon)
+			{
+				continue;
+			}
+			else
+			{
+				throw std::exception();
+			}
 		}
 
 		break;
@@ -585,6 +653,48 @@ bool Translator::Scaner::AlgorithmScan_BareAlgorithmDeclaration(const TokensVect
 	return false;
 }
 
+bool Translator::Scaner::AlgorithmScan_InstanceDeclaration(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Scope>& scope_)
+{
+	auto o = it_;
+
+
+	auto keywordMake = Tokens::RequireKeyword(tokens_, it_, Tokens::Keyword::Type::Make);
+	if(keywordMake)
+	{
+		auto instanceIdentifier = Tokens::RequireIdentifier(tokens_, it_);
+		if(instanceIdentifier)
+		{
+			auto keywordOf = Tokens::RequireKeyword(tokens_, it_, Tokens::Keyword::Type::Of);
+			if(keywordMake)
+			{
+				auto schema = AlgorithmScan_Schema(tokens_, it_, scope_);
+				if(schema)
+				{
+					return true;
+				}
+				else
+				{
+					throw std::exception(); // TODO:
+				}
+			}
+			else
+			{
+				throw std::exception(); // TODO:
+			}
+		}
+		else
+		{
+			throw std::exception(); // TODO:
+		}
+
+		// TODO: .make <type name>
+	}
+
+
+	it_ = o;
+	return false;
+}
+
 #pragma endregion
 
 #pragma region ExpressionScan
@@ -662,6 +772,20 @@ void Translator::Scaner::ExpressionScan_BlockContent(const TokensVector& tokens_
 		{
 			block_->Add(block);
 			continue;
+		}
+
+		auto instance = ExpressionScan_InstanceDeclaration(tokens_, it_, block_);
+		if(instance)
+		{
+			auto semicolon = Tokens::RequireSpecial(tokens_, it_, Tokens::Special::Type::Semicolon);
+			if(semicolon)
+			{
+				continue;
+			}
+			else
+			{
+				throw std::exception();
+			}
 		}
 
 		break;
@@ -765,7 +889,7 @@ bool Translator::Scaner::ExpressionScan_Body(const TokensVector& tokens_, Tokens
 			auto block = ExpressionScan_Block(tokens_, it_, algorithm_->GetLocalScope());
 			if(block)
 			{
-				algorithm_->SetInstruction(block);
+				algorithm_->SetCommand(block);
 				return true;
 			}
 			else
@@ -878,6 +1002,55 @@ bool Translator::Scaner::ExpressionScan_BareAlgorithmDeclaration(const TokensVec
 	else
 	{
 		throw std::exception(); // TODO
+	}
+
+
+	it_ = o;
+	return false;
+}
+
+Translator::Reference<Translator::Instructions::Instance> Translator::Scaner::ExpressionScan_InstanceDeclaration(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Scope>& scope_)
+{
+	auto o = it_;
+
+
+	auto keywordMake = Tokens::RequireKeyword(tokens_, it_, Tokens::Keyword::Type::Make);
+	if(keywordMake)
+	{
+		auto instanceIdentifier = Tokens::RequireIdentifier(tokens_, it_);
+		if(instanceIdentifier)
+		{
+			auto keywordOf = Tokens::RequireKeyword(tokens_, it_, Tokens::Keyword::Type::Of);
+			if(keywordMake)
+			{
+				auto schema = AlgorithmScan_Schema(tokens_, it_, scope_);
+				if(schema)
+				{
+					auto name = !instanceIdentifier->GetName().empty() ?
+						instanceIdentifier->GetName() :
+						scope_->GenerateName();
+					auto instance = MakeReference(new Instructions::Instance(scope_, name, schema));
+
+					scope_->Add(name, instance);
+
+					return instance;
+				}
+				else
+				{
+					throw std::exception(); // TODO:
+				}
+			}
+			else
+			{
+				throw std::exception(); // TODO:
+			}
+		}
+		else
+		{
+			throw std::exception(); // TODO:
+		}
+
+		// TODO: .make <type name>
 	}
 
 

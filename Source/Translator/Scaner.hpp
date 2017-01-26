@@ -16,9 +16,16 @@ namespace Translator
 		class Executable;
 		// ???
 		class Algorithm;
+		namespace Algorithms
+		{
+			class Bare;
+		}
+		class Command;
 		// Terminal
 		class Block;
 		class Schema;
+
+		class Instance;
 	}
 	class Scaner;
 
@@ -131,7 +138,7 @@ namespace Translator
 		protected:
 			const Reference<const Schema> result;
 			const Reference<Scope> localScope;
-			Reference<Instruction> instruction;
+			Reference<Command> command;
 		public:
 			inline Algorithm() = delete;
 			inline Algorithm(const Algorithm&) = delete;
@@ -148,9 +155,9 @@ namespace Translator
 			{
 				return localScope;
 			}
-			inline void SetInstruction(const Reference<Instruction>& instruction_)
+			inline void SetCommand(const Reference<Command>& command_)
 			{
-				instruction = instruction_;
+				command = command_;
 			}
 		public:
 			virtual bool IsEqual(const Reference<const Algorithm>& source_) const;
@@ -174,11 +181,22 @@ namespace Translator
 			};
 		}
 
+		class Command:
+			public Instruction
+		{
+		public:
+			inline Command() = default;
+			inline Command(const Command&) = delete;
+			virtual ~Command() override = default;
+			inline Command& operator = (const Command&) = delete;
+		};
+
 		class Block:
-			public Scope
+			public Scope,
+			public Command
 		{
 		protected:
-			Vector<Reference<const Instruction>> instructions;
+			Vector<Reference<const Command>> commands;
 		public:
 			inline Block() = delete;
 			inline Block(const Reference<Scope>& scope_, const Name& name_):
@@ -189,9 +207,9 @@ namespace Translator
 			virtual ~Block() override = default;
 			inline Block& operator = (const Block&) = delete;
 		public:
-			inline void Add(const Reference<const Instruction>& instruction_)
+			inline void Add(const Reference<const Command>& command_)
 			{
-				instructions.push_back(instruction_);
+				commands.push_back(command_);
 			}
 		};
 		class Schema:
@@ -241,6 +259,28 @@ namespace Translator
 				throw std::exception(); // TODO
 			}
 		};
+
+		class Instance:
+			public Unit
+		{
+		protected:
+			const Reference<Schema> schema;
+		public:
+			inline Instance() = delete;
+			inline Instance(const Reference<Scope>& scope_, const Name& name_, const Reference<Schema>& schema_):
+				Unit(scope_, name_),
+				schema(schema_)
+			{
+			}
+			inline Instance(const Instance&) = delete;
+			virtual ~Instance() override = default;
+			inline Instance& operator = (const Instance&) = delete;
+		public:
+			inline Reference<Schema> GetSchema() const
+			{
+				return schema;
+			}
+		};
 	}
 
 
@@ -253,7 +293,7 @@ namespace Translator
 		Scaner& operator = (const Scaner&) = delete;
 	protected: // Type scan
 		Reference<Instructions::Block> SchemaScan_Block(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Scope>& scope_);
-		/* NEW */ void SchemaScan_BlockContent(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Block>& block_);
+		void SchemaScan_BlockContent(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Block>& block_);
 		bool SchemaScan_Declaration(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Scope>& scope_);
 		bool SchemaScan_SchemaDeclaration(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Scope>& scope_);
 		void SchemaScan_SchemaContent(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Schema>& schema_);
@@ -261,9 +301,10 @@ namespace Translator
 		bool SchemaScan_Body(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Scope>& scope_);
 		bool SchemaScan_AlgorithmDeclaration(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Schema>& schema_);
 		bool SchemaScan_BareAlgorithmDeclaration(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Scope>& localScope_);
+		/* NEW */ bool SchemaScan_InstanceDeclaration(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Scope>& scope_);
 	protected: // Algorithm scan
 		Reference<Instructions::Block> AlgorithmScan_Block(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Scope>& scope_);
-		/* NEW */ void AlgorithmScan_BlockContent(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Block>& block_);
+		void AlgorithmScan_BlockContent(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Block>& block_);
 		bool AlgorithmScan_Declaration(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Scope>& scope_);
 		Reference<Instructions::Schema> AlgorithmScan_Schema(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Scope>& scope_);
 		Reference<Instructions::Schema> AlgorithmScan_SchemaDeclaration(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Scope>& scope_);
@@ -271,9 +312,10 @@ namespace Translator
 		bool AlgorithmScan_Body(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Scope>& scope_);
 		bool AlgorithmScan_AlgorithmDeclaration(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Schema>& schema_);
 		bool AlgorithmScan_BareAlgorithmDeclaration(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Scope>& localScope_, const Reference<const Instructions::Schema>& resultSchema_);
+		/* NEW */ bool AlgorithmScan_InstanceDeclaration(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Scope>& scope_);
 	protected: // Expression scan
 		Reference<Instructions::Block> ExpressionScan_Block(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Scope>& scope_);
-		/* NEW */ void ExpressionScan_BlockContent(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Block>& block_);
+		void ExpressionScan_BlockContent(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Block>& block_);
 		bool ExpressionScan_Declaration(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Scope>& scope_);
 		Reference<Instructions::Schema> ExpressionScan_Schema(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Scope>& scope_);
 		Reference<Instructions::Schema> ExpressionScan_SchemaDeclaration(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Scope>& scope_);
@@ -281,6 +323,7 @@ namespace Translator
 		bool ExpressionScan_Body(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Algorithm>& algorithm_);
 		bool ExpressionScan_AlgorithmDeclaration(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Schema>& schema_);
 		bool ExpressionScan_BareAlgorithmDeclaration(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Algorithms::Bare>& algorithm_);
+		/* NEW */ Reference<Instructions::Instance> ExpressionScan_InstanceDeclaration(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Scope>& scope_);
 	public:
 		Reference<Instructions::Scope> Parse(const TokensVector& tokens_);
 	};

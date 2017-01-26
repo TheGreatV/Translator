@@ -241,9 +241,9 @@ namespace Translator
 			enum class Type
 			{
 				None,
-				Schema, Algorithm,
-				Body,
-				Block
+				Schema, Make, Of,
+				Algorithm, Body,
+				Block,
 			};
 		public:
 			const Keyword::Type type;
@@ -262,6 +262,8 @@ namespace Translator
 				switch(type)
 				{
 					case Keyword::Type::Schema: return "Schema";
+					case Keyword::Type::Make: return "Make";
+					case Keyword::Type::Of: return "Of";
 					case Keyword::Type::Algorithm: return "Algorithm";
 					case Keyword::Type::Body: return "Body";
 					case Keyword::Type::Block: return "Block";

@@ -523,6 +523,20 @@ Translator::TokensVector Translator::Lexer::Parse(const Glyphs& glyphs_)
 						i = j - 1;
 						return;
 					}
+					if(keywordSource == ".make")
+					{
+						auto keyword = MakeReference(new Tokens::Keyword(Tokens::Keyword::Type::Make));
+						tokens.push_back(keyword);
+						i = j - 1;
+						return;
+					}
+					if(keywordSource == ".of")
+					{
+						auto keyword = MakeReference(new Tokens::Keyword(Tokens::Keyword::Type::Of));
+						tokens.push_back(keyword);
+						i = j - 1;
+						return;
+					}
 					if(keywordSource == ".algorithm")
 					{
 						auto keyword = MakeReference(new Tokens::Keyword(Tokens::Keyword::Type::Algorithm));
