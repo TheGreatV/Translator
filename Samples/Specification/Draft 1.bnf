@@ -1,0 +1,43 @@
+Alphabet:
+<Digit> = "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9";
+<Letter> = "a" - "z" | "A" - "Z";
+<Glyph> = <Letter> | <Digit> | "_";
+<Symbol> = "~" | "@" | "#" | "$" | "%" | "^" | "&" | "*" | "-" | "+" | "<" | ">" | "?" | "/" | "|" | "\\";
+
+
+Identifier:
+<Identifier> = (<Glyph> {<Glyph>}) | (<Symbol> {<Symbol>});
+<Named Object> = <Identifier> | <Block>;
+
+
+Keywords:
+<Keyword Block> = ".block";
+<Keyword Alias> = ".alias";
+<Keyword As> = ".as";
+<Keyword Schema> = ".schema";
+<Keyword Left> = ".left";
+<Keyword Right> = ".right";
+
+
+Block:
+<Block Definition> = <Unnamed Block Definition> | <Named Block Definition>;
+
+<Unnamed Block Definition> = "{" {<Instruction>} "}";
+<Named Block Definition> = <Keyword Block> <Identifier> <Unnamed Block Definition>;
+
+
+Schema:
+<Schema> = <Schema Declaration> | <Named Object>;
+<Schema Declaration> = <Keyword Schema> "{" "}";
+
+
+Alias:
+<Alias> = <Keyword Alias> <Identifier> <Keyword As> <Named Object>;
+
+
+Instruction:
+<Declaration> = <Schema Declaration>;
+<Definition> = <Block Definition>;
+<Instruction> = <Definition> | <Declaration>;
+
+

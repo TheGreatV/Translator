@@ -32,22 +32,22 @@
 .value p;
 
 `/ calls
-.make Property .of .schema .algorithm .body {} `/ executes when instance is called by name
+.make Property .of .schema .algorithm .none .body {} `/ executes when instance is called by name
 Property;
 
-.make Function .of .schema .algorithm () .body {} `/ executes when instance is called with braces
+.make Function .of .schema .algorithm .none () .body {} `/ executes when instance is called with braces
 Function();
 
 .make Function .of .schema .algorithm R (.make A) .body { `{ TBD }` } `/ variant with result and arguments
 Function(a);
 
-.make Prefix .of .schema .algorithm .right .make A .body {} `/ when right operand is type-equal
+.make Prefix .of .schema .algorithm .none .right .make A .body {} `/ when right operand is type-equal
 Prefix .make A;
 
-.make Postfix .of .schema .algorithm .left .make A .body {} `/ when left operand is type-equal
+.make Postfix .of .schema .algorithm .none .left .make A .body {} `/ when left operand is type-equal
 .make A Postfix;
 
-.make Interfix .of .schema .algorithm .left .make A .right .make B .body {} `/ when left operand is type-equal
+.make Interfix .of .schema .algorithm .none .left .make A .right .make B .body {} `/ when left operand is type-equal
 .make A Interfix .make B;
 
 

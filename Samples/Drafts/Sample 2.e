@@ -129,6 +129,17 @@
 	.alias Function(argument) .as result;
 }
 
+.block OperatorUsing {
+	.make + .of .schema {
+		.algorithm Result
+			.left .make left .of Argument
+			.right .make right .of Argument
+		.body;
+	}
+	
+	argument + argument;
+}
+
 
 
 
