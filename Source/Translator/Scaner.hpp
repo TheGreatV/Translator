@@ -7,338 +7,540 @@
 
 namespace Translator
 {
-	class Instruction;
-	namespace Instructions
+	class Marker;
+
+	namespace Structure
 	{
-		// Intermediate
-		class Unit;
-		class Scope;
-		class Executable;
-		// ???
-		class Algorithm;
-		namespace Algorithms
+		class Marker;
+
+		namespace Markers
 		{
-			class Bare;
+			class Unit;
+			class Scope;
+
+			class Block; // TODO
+			class Space; // TODO
+			class Schema;
+
+			class Algorithm;
 		}
-		class Command;
-		// Terminal
-		class Block;
-		class Schema;
 
-		class Instance;
+		class Scaner;
 	}
-	class Scaner;
-
-
-	class Instruction
+	namespace Functional
 	{
+		namespace Markers
+		{
+			class Unit;
+			class Scope;
+
+			class Schema;
+
+			class Algorithm;
+		}
+
+		class Scaner;
+	}
+
+
+	class Marker:
+		public This<Marker>
+	{
+	protected:
+		inline Marker(const Reference<Marker>& this_);
 	public:
-		inline Instruction() = default;
-		inline Instruction(const Instruction&) = default;
-		virtual ~Instruction() = default;
-		inline Instruction& operator = (const Instruction&) = default;
+		virtual ~Marker() = default;
 	};
-	namespace Instructions
+
+	namespace Structure
 	{
-
-		class Unit:
-			public Instruction,
-			public Named
-		{
-		protected:
-			const Reference<Scope> scope;
-		public:
-			inline Unit() = delete;
-			inline Unit(const Reference<Scope>& scope_, const Name& name_):
-				Instruction(),
-				Named(name_),
-				scope(scope_)
-			{
-			}
-			inline Unit(const Unit&) = delete;
-			virtual ~Unit() override = default;
-			inline Unit& operator = (const Unit&) = delete;
-		public:
-			inline Reference<Scope> GetScope() const
-			{
-				return scope;
-			}
-		};
-		class Scope:
-			public Unit
+		class Marker:
+			public Translator::Marker
 		{
 		public:
-			using Units = Dictionary<Name, Reference<Unit>>;
-		protected:
-			Size generatorId = 0;
-			Units units;
-		public:
-			inline Scope() = delete;
-			inline Scope(const Reference<Scope>& scope_, const Name& name_):
-				Unit(scope_, name_),
-				units()
-			{
-			}
-			inline Scope(const Unit&) = delete;
-			virtual ~Scope() override = default;
-			inline Scope& operator = (const Scope&) = delete;
-		public:
-			inline void ResetGenerator()
-			{
-				generatorId = 0;
-			}
-			inline Name GenerateName()
-			{
-				return "<" + std::to_string(generatorId++) + ">";
-			}
-		public:
-			inline void Add(const Name& name_, const Reference<Unit>& unit_)
-			{
-				if(units.find(name_) == units.end())
-				{
-					units.insert({name_, unit_});
-				}
-				else
-				{
-					throw std::exception(); // TODO
-				}
-			}
-			inline Reference<Unit> GetOwned(const Name& name_)
-			{
-				auto it = units.find(name_);
-				if(it != units.end())
-				{
-					auto &unit = (*it).second;
-					return unit;
-				}
-				else
-				{
-					throw std::exception(); // TODO
-				}
-			}
-			inline Reference<Unit> Get(const Name& name_)
-			{
-				auto it = units.find(name_);
-				if(it != units.end())
-				{
-					auto &unit = (*it).second;
-					return unit;
-				}
-				else
-				{
-					return scope ?
-						scope->Get(name_) :
-						throw std::exception(); // TODO
-				}
-			}
+			inline Marker(const Reference<Marker>& this_);
 		};
 
-		class Algorithm
+		namespace Markers
 		{
-		protected:
-			const Reference<const Schema> result;
-			const Reference<Scope> localScope;
-			Reference<Command> command;
-		public:
-			inline Algorithm() = delete;
-			inline Algorithm(const Algorithm&) = delete;
-			virtual ~Algorithm() = default;
-			inline Algorithm& operator = (const Algorithm&) = delete;
-		protected:
-			inline Algorithm(const Reference<Scope>& localScope_, const Reference<const Schema>& result_);
-		public:
-			inline Reference<const Schema> GetResult() const
+			class Unit:
+				public Marker
 			{
-				return result;
-			}
-			inline Reference<Scope> GetLocalScope() const
-			{
-				return localScope;
-			}
-			inline void SetCommand(const Reference<Command>& command_)
-			{
-				command = command_;
-			}
-		public:
-			virtual bool IsEqual(const Reference<const Algorithm>& source_) const;
-		};
-		namespace Algorithms
-		{
-			class Bare:
-				public Algorithm
+			protected:
+				const Link<Scope> scope;
+			public:
+				inline Unit(const Reference<Unit>& this_, const Reference<Scope>& scope_);
+				virtual ~Unit() override = default;
+			public:
+				inline Reference<Scope> GetScope() const;
+			};
+			class Scope:
+				public Unit
 			{
 			public:
-				inline Bare() = delete;
-				inline Bare(const Reference<Scope>& localScope_, const Reference<const Schema>& result_):
-					Algorithm(localScope_, result_)
-				{
-				}
-				inline Bare(const Bare&) = delete;
-				virtual ~Bare() override = default;
-				inline Bare& operator = (const Bare&) = delete;
+				using Name = String;
+				using Units = Dictionary<Name, Reference<Unit>>;
+			protected:
+				class Namer;
+			protected:
+				const Pointer<Namer> namer = Move(MakePointer<Namer>());
+				Units units;
 			public:
-				virtual bool IsEqual(const Reference<const Algorithm>& source_) const override;
+				inline Scope(const Reference<Scope>& this_, const Reference<Scope>& scope_);
+				virtual ~Scope() override = default;
+			public:
+				inline void Add(const Name& name_, const Reference<Unit>& unit_);
+				inline Reference<Unit> GetOwned(const Name& name_) const;
+				inline const Units& GetUnits() const;
+				virtual void ResetNaming();
+				inline Name GenerateName();
+			};
+			class Scope::Namer
+			{
+			protected:
+				Size index = 0;
+			public:
+				inline void Reset();
+				inline Name Generate();
+			};
+		
+			class Schema:
+				public Scope
+			{
+			public:
+				using Index = Size;
+				using Algorithms = Dictionary<Index, Reference<Algorithm>>;
+			protected:
+				class Indexer;
+			protected:
+				const Pointer<Indexer> indexer = Move(MakePointer<Indexer>());
+				Algorithms algorithms;
+			public:
+				inline Schema(const Reference<Schema>& this_, const Reference<Scope>& scope_);
+			public:
+				inline void Add(const Index& index_, const Reference<Algorithm>& algorithm_);
+				inline Reference<Algorithm> GetOwned(const Index& index_) const;
+				inline const Algorithms& GetAlgorithms() const;
+				virtual void ResetNaming() override;
+				inline Index GenerateIndex();
+			};
+			class Schema::Indexer
+			{
+			protected:
+				Index index = 0;
+			public:
+				inline void Reset();
+				inline Index Generate();
+			};
+
+			class Algorithm:
+				public Scope
+			{
+			protected:
+				const Link<Schema> schema;
+			public:
+				inline Algorithm(const Reference<Algorithm>& this_, const Reference<Schema>& schema_);
+			public:
+				inline Reference<Schema> GetSchema() const;
 			};
 		}
 
-		class Command:
-			public Instruction
-		{
-		public:
-			inline Command() = default;
-			inline Command(const Command&) = delete;
-			virtual ~Command() override = default;
-			inline Command& operator = (const Command&) = delete;
-		};
-
-		class Block:
-			public Scope,
-			public Command
+		class Scaner
 		{
 		protected:
-			Vector<Reference<const Command>> commands;
-		public:
-			inline Block() = delete;
-			inline Block(const Reference<Scope>& scope_, const Name& name_):
-				Scope(scope_, name_)
-			{
-			}
-			inline Block(const Block&) = delete;
-			virtual ~Block() override = default;
-			inline Block& operator = (const Block&) = delete;
-		public:
-			inline void Add(const Reference<const Command>& command_)
-			{
-				commands.push_back(command_);
-			}
-		};
-		class Schema:
-			public Scope
-		{
-		protected:
-			Vector<Reference<Algorithm>> algorithms;
-		public:
-			inline Schema() = delete;
-			inline Schema(const Reference<Scope>& scope_, const Name& name_):
-				Scope(scope_, name_)
-			{
-			}
-			inline Schema(const Schema&) = delete;
-			virtual ~Schema() override = default;
-			inline Schema& operator = (const Schema&) = delete;
-		public:
-			inline void Add(const Reference<Algorithm>& algorithm_)
-			{
-				auto it = std::find_if(algorithms.begin(), algorithms.end(), [&](const Reference<const Algorithm>& source_){
-					return algorithm_->IsEqual(source_);
-				});
-				
-				if(it == algorithms.end())
-				{
-					algorithms.push_back(algorithm_);
-				}
-				else
-				{
-					throw std::exception(); // TODO
-				}
-			}
-			inline Reference<Algorithms::Bare> Get(const Reference<Instructions::Schema>& resultSchema_) const
-			{
-				for(auto &algorithm : algorithms)
-				{
-					auto bare = UpCast<Instructions::Algorithms::Bare>(algorithm);
-					if(bare)
-					{
-						if(bare->GetResult() == resultSchema_)
-						{
-							return bare;
-						}
-					}
-				}
+			bool Scan_Schema(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Markers::Scope>& scope_);
+			bool Scan_SchemaDefinition(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Markers::Scope>& scope_);
+			bool Scan_SchemaContent(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Markers::Schema>& schema_);
 
-				throw std::exception(); // TODO
-			}
-		};
+			bool Scan_AlgorithmDefinition(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Markers::Schema>& schema_);
+			bool Scan_BareAlgorithmDefinition(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Markers::Schema>& schema_);
 
-		class Instance:
-			public Unit
-		{
-		protected:
-			const Reference<Schema> schema;
+			bool Scan_Body(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Markers::Algorithm>& algorithm_);
+			bool Scan_BodyContent(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Markers::Algorithm>& algorithm_);
 		public:
-			inline Instance() = delete;
-			inline Instance(const Reference<Scope>& scope_, const Name& name_, const Reference<Schema>& schema_):
-				Unit(scope_, name_),
-				schema(schema_)
-			{
-			}
-			inline Instance(const Instance&) = delete;
-			virtual ~Instance() override = default;
-			inline Instance& operator = (const Instance&) = delete;
-		public:
-			inline Reference<Schema> GetSchema() const
-			{
-				return schema;
-			}
+			Reference<Structure::Markers::Scope> Scan(const TokensVector& tokens_);
 		};
 	}
-
-
-	class Scaner
+	namespace Functional
 	{
-	public:
-		inline Scaner() = default;
-		inline Scaner(const Scaner&) = delete;
-		virtual ~Scaner() = default;
-		Scaner& operator = (const Scaner&) = delete;
-	protected: // Type scan
-		Reference<Instructions::Block> SchemaScan_Block(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Scope>& scope_);
-		void SchemaScan_BlockContent(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Block>& block_);
-		bool SchemaScan_Declaration(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Scope>& scope_);
-		bool SchemaScan_SchemaDeclaration(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Scope>& scope_);
-		void SchemaScan_SchemaContent(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Schema>& schema_);
-		bool SchemaScan_Schema(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Scope>& scope_);
-		bool SchemaScan_Body(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Scope>& scope_);
-		bool SchemaScan_AlgorithmDeclaration(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Schema>& schema_);
-		bool SchemaScan_BareAlgorithmDeclaration(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Scope>& localScope_);
-		/* NEW */ bool SchemaScan_InstanceDeclaration(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Scope>& scope_);
-	protected: // Algorithm scan
-		Reference<Instructions::Block> AlgorithmScan_Block(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Scope>& scope_);
-		void AlgorithmScan_BlockContent(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Block>& block_);
-		bool AlgorithmScan_Declaration(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Scope>& scope_);
-		Reference<Instructions::Schema> AlgorithmScan_Schema(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Scope>& scope_);
-		Reference<Instructions::Schema> AlgorithmScan_SchemaDeclaration(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Scope>& scope_);
-		void AlgorithmScan_SchemaContent(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Schema>& schema_);
-		bool AlgorithmScan_Body(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Scope>& scope_);
-		bool AlgorithmScan_AlgorithmDeclaration(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Schema>& schema_);
-		bool AlgorithmScan_BareAlgorithmDeclaration(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Scope>& localScope_, const Reference<const Instructions::Schema>& resultSchema_);
-		/* NEW */ bool AlgorithmScan_InstanceDeclaration(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Scope>& scope_);
-	protected: // Expression scan
-		Reference<Instructions::Block> ExpressionScan_Block(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Scope>& scope_);
-		void ExpressionScan_BlockContent(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Block>& block_);
-		bool ExpressionScan_Declaration(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Scope>& scope_);
-		Reference<Instructions::Schema> ExpressionScan_Schema(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Scope>& scope_);
-		Reference<Instructions::Schema> ExpressionScan_SchemaDeclaration(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Scope>& scope_);
-		void ExpressionScan_SchemaContent(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Schema>& schema_);
-		bool ExpressionScan_Body(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Algorithm>& algorithm_);
-		bool ExpressionScan_AlgorithmDeclaration(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Schema>& schema_);
-		bool ExpressionScan_BareAlgorithmDeclaration(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Algorithms::Bare>& algorithm_);
-		/* NEW */ Reference<Instructions::Instance> ExpressionScan_InstanceDeclaration(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Scope>& scope_);
-	public:
-		Reference<Instructions::Scope> Parse(const TokensVector& tokens_);
-	};
+		class Marker:
+			public Translator::Marker
+		{
+		public:
+			inline Marker(const Reference<Marker>& this_);
+		};
+
+		namespace Markers
+		{
+			class Unit:
+				public Marker
+			{
+			protected:
+				const Link<Scope> scope;
+			public:
+				inline Unit(const Reference<Unit>& this_, const Reference<Scope>& scope_);
+				virtual ~Unit() override = default;
+			public:
+				inline Reference<Scope> GetScope() const;
+			};
+			class Scope:
+				public Unit
+			{
+			public:
+				using Name = String;
+				using Units = Dictionary<Name, Reference<Unit>>;
+			protected:
+				class Namer;
+			protected:
+				Units units;
+			public:
+				inline Scope(const Reference<Scope>& this_, const Reference<Scope>& scope_);
+				virtual ~Scope() override = default;
+			public:
+				inline bool IsOwnedUnit(const Name& name_) const;
+				inline bool IsUnit(const Name& name_) const;
+				inline void Add(const Name& name_, const Reference<Unit>& unit_);
+				inline Reference<Unit> GetOwned(const Name& name_) const;
+				inline Reference<Unit> Get(const Name& name_) const;
+			};
+
+			class Schema:
+				public Scope
+			{
+			public:
+				using Index = Size;
+			protected:
+				Dictionary<Index, Reference<Algorithm>> algorithms;
+			public:
+				inline Schema(const Reference<Schema>& this_, const Reference<Scope>& scope_);
+			public:
+				inline void Add(const Index& index_, const Reference<Algorithm>& algorithm_);
+				inline Reference<Algorithm> GetOwned(const Index& index_) const;
+			};
+
+			class Algorithm:
+				public Scope
+			{
+			protected:
+				const Link<Schema> schema;
+			public:
+				inline Algorithm(const Reference<Algorithm>& this_, const Reference<Schema>& schema_);
+			public:
+				inline Reference<Schema> GetSchema() const;
+			};
+		}
+
+		class Scaner
+		{
+		protected:
+			Reference<Markers::Algorithm> Prepare(const Reference<Structure::Markers::Algorithm>& structureAlgorithm_, const Reference<Markers::Schema>& schema_);
+			Reference<Markers::Schema> Prepare(const Reference<Structure::Markers::Schema>& structureSchema_, const Reference<Markers::Scope>& scope_);
+			Reference<Markers::Unit> Prepare(const Reference<Structure::Markers::Unit>& structureUnit_, const Reference<Markers::Scope>& scope_);
+		protected:
+			bool Scan_Schema(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Markers::Scope>& scope_, const Reference<Structure::Markers::Scope>& structureScope_);
+			bool Scan_SchemaDefinition(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Markers::Scope>& scope_, const Reference<Structure::Markers::Scope>& structureScope_);
+			bool Scan_SchemaContent(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Markers::Schema>& schema_, const Reference<Structure::Markers::Schema>& structureSchema_);
+
+			bool Scan_AlgorithmDefinition(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Markers::Schema>& schema_, const Reference<Structure::Markers::Schema>& structureSchema_);
+			bool Scan_BareAlgorithmDefinition(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Markers::Schema>& schema_, const Reference<Structure::Markers::Schema>& structureSchema_);
+
+			bool Scan_Body(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Markers::Algorithm>& algorithm_, const Reference<Structure::Markers::Algorithm>& structureAlgorithm_);
+			bool Scan_BodyContent(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Markers::Algorithm>& algorithm_, const Reference<Structure::Markers::Algorithm>& structureAlgorithm_);
+		public:
+			void Scan(const TokensVector& tokens_, const Reference<Structure::Markers::Scope> structureScope_);
+		};
+	}
 }
 
 
-#pragma region Instructions
+#pragma region Translator
+
+#pragma region Marker
+
+inline Translator::Marker::Marker(const Reference<Marker>& this_):
+	This(this_)
+{
+}
+
+#pragma endregion
+
+#pragma region Structure
+
+#pragma region Marker
+
+inline Translator::Structure::Marker::Marker(const Reference<Marker>& this_):
+	Translator::Marker(this_)
+{
+}
+
+#pragma endregion
+
+#pragma region Markers
+
+#pragma region Unit
+
+inline Translator::Structure::Markers::Unit::Unit(const Reference<Unit>& this_, const Reference<Scope>& scope_):
+	Marker(this_),
+	scope(scope_)
+{
+}
+inline Translator::Reference<Translator::Structure::Markers::Scope> Translator::Structure::Markers::Unit::GetScope() const
+{
+	return MakeReference(scope);
+}
+
+#pragma endregion
+
+#pragma region Scope
+
+#pragma region Namer
+
+inline void Translator::Structure::Markers::Scope::Namer::Reset()
+{
+	index = 0;
+}
+inline Translator::Structure::Markers::Scope::Name Translator::Structure::Markers::Scope::Namer::Generate()
+{
+	return "<" + std::to_string(index++) + ">";
+}
+
+#pragma endregion
+
+
+inline Translator::Structure::Markers::Scope::Scope(const Reference<Scope>& this_, const Reference<Scope>& scope_):
+	Unit(this_, scope_)
+{
+}
+
+inline void Translator::Structure::Markers::Scope::Add(const Name& name_, const Reference<Unit>& unit_)
+{
+	if(units.find(name_) == units.end())
+	{
+		units[name_] = unit_;
+	}
+	else
+	{
+		throw Exception();
+	}
+}
+inline Translator::Reference<Translator::Structure::Markers::Unit> Translator::Structure::Markers::Scope::GetOwned(const Name& name_) const
+{
+	auto it = units.find(name_);
+	if(it != units.end())
+	{
+		return (*it).second;
+	}
+	else
+	{
+		throw Exception();
+	}
+}
+inline const Translator::Structure::Markers::Scope::Units& Translator::Structure::Markers::Scope::GetUnits() const
+{
+	return units;
+}
+inline Translator::Structure::Markers::Scope::Name Translator::Structure::Markers::Scope::GenerateName()
+{
+	return namer->Generate();
+}
+
+#pragma endregion
+
+#pragma region Schema
+
+#pragma region Indexer
+
+inline void Translator::Structure::Markers::Schema::Indexer::Reset()
+{
+	index = 0;
+}
+inline Translator::Structure::Markers::Schema::Index Translator::Structure::Markers::Schema::Indexer::Generate()
+{
+	return index++;
+}
+
+#pragma endregion
+
+
+inline Translator::Structure::Markers::Schema::Schema(const Reference<Schema>& this_, const Reference<Scope>& scope_):
+	Scope(this_, scope_)
+{
+}
+
+inline void Translator::Structure::Markers::Schema::Add(const Index& index_, const Reference<Algorithm>& algorithm_)
+{
+	if(algorithms.find(index_) == algorithms.end())
+	{
+		algorithms[index_] = algorithm_;
+	}
+	else
+	{
+		throw Exception();
+	}
+}
+inline Translator::Reference<Translator::Structure::Markers::Algorithm> Translator::Structure::Markers::Schema::GetOwned(const Index& index_) const
+{
+	auto it = algorithms.find(index_);
+	if(it != algorithms.end())
+	{
+		return (*it).second;
+	}
+	else
+	{
+		throw Exception();
+	}
+}
+inline const Translator::Structure::Markers::Schema::Algorithms& Translator::Structure::Markers::Schema::GetAlgorithms() const
+{
+	return algorithms;
+}
+
+inline Translator::Structure::Markers::Schema::Index Translator::Structure::Markers::Schema::GenerateIndex()
+{
+	return indexer->Generate();
+}
+
+#pragma endregion
 
 #pragma region Algorithm
 
-inline Translator::Instructions::Algorithm::Algorithm(const Reference<Scope>& localScope_, const Reference<const Schema>& result_):
-	localScope(localScope_),
-	result(result_)
+inline Translator::Structure::Markers::Algorithm::Algorithm(const Reference<Algorithm>& this_, const Reference<Schema>& schema_):
+	Scope(this_, schema_),
+	schema(schema_)
 {
 }
+inline Translator::Reference<Translator::Structure::Markers::Schema> Translator::Structure::Markers::Algorithm::GetSchema() const
+{
+	return Move(MakeReference(schema));
+}
+
+#pragma endregion
+
+#pragma endregion
+
+#pragma endregion
+
+#pragma region Functional
+
+#pragma region Marker
+
+inline Translator::Functional::Marker::Marker(const Reference<Marker>& this_):
+	Translator::Marker(this_)
+{
+}
+
+#pragma endregion
+
+#pragma region Markers
+
+#pragma region Unit
+
+inline Translator::Functional::Markers::Unit::Unit(const Reference<Unit>& this_, const Reference<Scope>& scope_):
+	Marker(this_),
+	scope(scope_)
+{
+}
+inline Translator::Reference<Translator::Functional::Markers::Scope> Translator::Functional::Markers::Unit::GetScope() const
+{
+	return MakeReference(scope);
+}
+
+#pragma endregion
+
+#pragma region Scope
+
+inline Translator::Functional::Markers::Scope::Scope(const Reference<Scope>& this_, const Reference<Scope>& scope_):
+	Unit(this_, scope_)
+{
+}
+
+inline bool Translator::Functional::Markers::Scope::IsOwnedUnit(const Name& name_) const
+{
+	auto it = units.find(name_);
+	return it != units.end();
+}
+inline bool Translator::Functional::Markers::Scope::IsUnit(const Name& name_) const
+{
+	return IsOwnedUnit(name_) || (GetScope() ? GetScope()->IsOwnedUnit(name_) : false);
+}
+inline void Translator::Functional::Markers::Scope::Add(const Name& name_, const Reference<Unit>& unit_)
+{
+	if(units.find(name_) == units.end())
+	{
+		units[name_] = unit_;
+	}
+	else
+	{
+		throw Exception();
+	}
+}
+inline Translator::Reference<Translator::Functional::Markers::Unit> Translator::Functional::Markers::Scope::GetOwned(const Name& name_) const
+{
+	auto it = units.find(name_);
+	if(it != units.end())
+	{
+		return (*it).second;
+	}
+	else
+	{
+		throw Exception();
+	}
+}
+inline Translator::Reference<Translator::Functional::Markers::Unit> Translator::Functional::Markers::Scope::Get(const Name& name_) const
+{
+	return IsOwnedUnit(name_) ? GetOwned(name_) : (GetScope() ? GetScope()->Get(name_) : throw Exception());
+}
+
+#pragma endregion
+
+#pragma region Schema
+
+inline Translator::Functional::Markers::Schema::Schema(const Reference<Schema>& this_, const Reference<Scope>& scope_):
+	Scope(this_, scope_)
+{
+}
+
+inline void Translator::Functional::Markers::Schema::Add(const Index& index_, const Reference<Algorithm>& algorithm_)
+{
+	if(algorithms.find(index_) == algorithms.end())
+	{
+		algorithms[index_] = algorithm_;
+	}
+	else
+	{
+		throw Exception();
+	}
+}
+inline Translator::Reference<Translator::Functional::Markers::Algorithm> Translator::Functional::Markers::Schema::GetOwned(const Index& index_) const
+{
+	auto it = algorithms.find(index_);
+	if(it != algorithms.end())
+	{
+		return (*it).second;
+	}
+	else
+	{
+		throw Exception();
+	}
+}
+
+#pragma endregion
+
+#pragma region Algorithm
+
+inline Translator::Functional::Markers::Algorithm::Algorithm(const Reference<Algorithm>& this_, const Reference<Schema>& schema_):
+	Scope(this_, schema_),
+	schema(schema_)
+{
+}
+inline Translator::Reference<Translator::Functional::Markers::Schema> Translator::Functional::Markers::Algorithm::GetSchema() const
+{
+	return Move(MakeReference(schema));
+}
+
+#pragma endregion
+
+#pragma endregion
 
 #pragma endregion
 

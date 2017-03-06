@@ -1,28 +1,27 @@
 #include "Scaner.hpp"
 
 
-#pragma region Algorithm
+#pragma region Translator
 
-bool Translator::Instructions::Algorithm::IsEqual(const Reference<const Algorithm>& source_) const
+#pragma region Structure
+
+#pragma region Markers
+
+#pragma region Scope
+
+void Translator::Structure::Markers::Scope::ResetNaming()
 {
-	throw std::exception(); // TODO
+	namer->Reset();
 }
 
 #pragma endregion
 
-#pragma region Algorithms
+#pragma region Schema
 
-#pragma region Bare
-
-bool Translator::Instructions::Algorithms::Bare::IsEqual(const Reference<const Algorithm>& source_) const
+void Translator::Structure::Markers::Schema::ResetNaming()
 {
-	auto bare = UpCast<Bare>(source_);
-	if(bare)
-	{
-		return result == bare->GetResult();
-	}
-
-	throw std::exception(); // TODO
+	Scope::ResetNaming();
+	indexer->Reset();
 }
 
 #pragma endregion
@@ -31,1096 +30,540 @@ bool Translator::Instructions::Algorithms::Bare::IsEqual(const Reference<const A
 
 #pragma region Scaner
 
-#pragma region SchemaScan
-
-Translator::Reference<Translator::Instructions::Block> Translator::Scaner::SchemaScan_Block(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Scope>& scope_)
+bool Translator::Structure::Scaner::Scan_Schema(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Structure::Markers::Scope>& scope_)
 {
 	auto o = it_;
 
-
-	Instructions::Block::Name name;
+	if(Scan_SchemaDefinition(tokens_, it_, scope_))
 	{
-		auto keywordBlock = Tokens::RequireKeyword(tokens_, it_, Tokens::Keyword::Type::Block);
-		if(keywordBlock)
+		return true;
+	}
+	if(auto identifier = Tokens::RequireIdentifier(tokens_, it_))
+	{
+		return true;
+	}
+
+	it_ = o;
+	return false;
+}
+bool Translator::Structure::Scaner::Scan_SchemaDefinition(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Structure::Markers::Scope>& scope_)
+{
+	auto o = it_;
+
+	if(auto keywordSchema = Move(Tokens::RequireKeyword(tokens_, it_, Tokens::Keyword::Type::Schema)))
+	{
+		Structure::Markers::Schema::Name name;
 		{
-			auto identifier = Tokens::RequireIdentifier(tokens_, it_);
-			if(identifier)
+			if(auto identifier = Move(Tokens::RequireIdentifier(tokens_, it_)))
 			{
 				name = identifier->GetName();
 			}
 			else
 			{
-				throw std::exception();
-			}
-		}
-	}
-
-	auto openingBrace = Tokens::RequireBrace(tokens_, it_, Tokens::Brace::Type::Figure, Tokens::Brace::Position::Begin);
-	if(openingBrace)
-	{
-		if(name.empty())
-		{
-			name = scope_->GenerateName();
-		}
-
-		auto block = MakeReference(new Instructions::Block(scope_, name));
-		{
-			scope_->Add(name, block);
-		}
-
-		SchemaScan_BlockContent(tokens_, it_, block);
-
-		// Search for closing brace
-		auto closingBrace = Tokens::RequireBrace(tokens_, it_, Tokens::Brace::Type::Figure, Tokens::Brace::Position::End);
-		if(closingBrace)
-		{
-			return block;
-		}
-		else
-		{
-			throw std::exception(); // TODO
-		}
-	}
-
-
-	it_ = o;
-	return false;
-}
-void Translator::Scaner::SchemaScan_BlockContent(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Block>& block_)
-{
-	while(true)
-	{
-		if(SchemaScan_SchemaDeclaration(tokens_, it_, block_))
-		{
-			continue;
-		}
-
-		auto block = SchemaScan_Block(tokens_, it_, block_);
-		if(block)
-		{
-			continue;
-		}
-
-		if(SchemaScan_InstanceDeclaration(tokens_, it_, block_))
-		{
-			auto semicolon = Tokens::RequireSpecial(tokens_, it_, Tokens::Special::Type::Semicolon);
-			if(semicolon)
-			{
-				continue;
-			}
-			else
-			{
-				throw std::exception();
+				name = scope_->GenerateName();
 			}
 		}
 
-		// TODO
+		auto schema = Make<Structure::Markers::Schema>(scope_);
 
-		break;
-	}
-}
-
-bool Translator::Scaner::SchemaScan_Declaration(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Scope>& scope_)
-{
-	auto o = it_;
-
-
-	if(SchemaScan_SchemaDeclaration(tokens_, it_, scope_))
-	{
-		return true;
-	}
-
-
-	it_ = o;
-	return false;
-}
-bool Translator::Scaner::SchemaScan_Schema(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Scope>& scope_)
-{
-	auto o = it_;
-
-
-	if(SchemaScan_SchemaDeclaration(tokens_, it_, scope_))
-	{
-		return true;
-	}
-
-	auto identifier = Tokens::RequireIdentifier(tokens_, it_);
-	if(identifier)
-	{
-		return true;
-	}
-
-
-	it_ = o;
-	return false;
-}
-bool Translator::Scaner::SchemaScan_SchemaDeclaration(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Scope>& scope_)
-{
-	auto o = it_;
-
-
-	auto keywordSchema = Tokens::RequireKeyword(tokens_, it_, Tokens::Keyword::Type::Schema);
-	if(keywordSchema)
-	{
-		auto identifier = Tokens::RequireIdentifier(tokens_, it_);
-		Instructions::Schema::Name name = identifier ? identifier->GetName() : scope_->GenerateName();
-
-		auto schema = MakeReference(new Instructions::Schema(scope_, name));
-
-		auto openingBrace = Tokens::RequireBrace(tokens_, it_, Tokens::Brace::Type::Figure, Tokens::Brace::Position::Begin);
-		if(openingBrace)
+		if(auto specialSemicolon = Move(Tokens::RequireSpecial(tokens_, it_, Tokens::Special::Type::Semicolon)))
 		{
-			// Scan content
-			SchemaScan_SchemaContent(tokens_, it_, schema);
-		
-			// Search for closing brace
-			auto closingBrace = Tokens::RequireBrace(tokens_, it_, Tokens::Brace::Type::Figure, Tokens::Brace::Position::End);
-			if(closingBrace)
+			scope_->Add(name, schema);
+
+			return true;
+		}
+
+		if(auto openingBrace = Move(Tokens::RequireBrace(tokens_, it_, Translator::Tokens::Brace::Type::Figure, Translator::Tokens::Brace::Position::Begin)))
+		{
+			while(Scan_SchemaContent(tokens_, it_, schema));
+
+			if(auto closingBrace = Move(Tokens::RequireBrace(tokens_, it_, Translator::Tokens::Brace::Type::Figure, Translator::Tokens::Brace::Position::End)))
 			{
 				scope_->Add(name, schema);
+
 				return true;
 			}
 			else
 			{
-				throw std::exception(); // TODO
+				throw Exception("No closing brace");
 			}
 		}
 		else
 		{
-			throw std::exception();
+			throw Exception("No opeing brace");
 		}
 	}
-
 
 	it_ = o;
 	return false;
 }
-void Translator::Scaner::SchemaScan_SchemaContent(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Schema>& schema_)
-{
-	while(true)
-	{
-		if(SchemaScan_SchemaDeclaration(tokens_, it_, schema_))
-		{
-			continue;
-		}
-
-		if(SchemaScan_AlgorithmDeclaration(tokens_, it_, schema_))
-		{
-			continue;
-		}
-
-		break;
-	}
-}
-
-bool Translator::Scaner::SchemaScan_Body(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Scope>& scope_)
+bool Translator::Structure::Scaner::Scan_SchemaContent(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Structure::Markers::Schema>& schema_)
 {
 	auto o = it_;
 
-
-	auto keywordBody = Tokens::RequireKeyword(tokens_, it_, Tokens::Keyword::Type::Body);
-	if(keywordBody)
+	if(Scan_SchemaDefinition(tokens_, it_, schema_))
 	{
-		auto semicolon = Tokens::RequireSpecial(tokens_, it_, Tokens::Special::Type::Semicolon);
-		if(semicolon)
-		{
-			return true;
-		}
-		else
-		{
-			// TODO: scan 1 instruction
-			if(SchemaScan_Block(tokens_, it_, scope_))
-			{
-				return true;
-			}
-			else
-			{
-				throw std::exception(); // TODO
-			}
-		}
+		return true;
 	}
-
-
-	it_ = o;
-	return false;
-}
-bool Translator::Scaner::SchemaScan_AlgorithmDeclaration(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Schema>& schema_)
-{
-	auto o = it_;
-
-
-	auto keywordAlgorithm = Tokens::RequireKeyword(tokens_, it_, Tokens::Keyword::Type::Algorithm);
-	if(keywordAlgorithm)
-	{
-		auto name = schema_->GenerateName();
-		auto localScope = MakeReference(new Instructions::Scope(schema_, name));
-		{
-			schema_->Scope::Add(name, localScope);
-		}
-
-		if(SchemaScan_Schema(tokens_, it_, localScope))
-		{
-			if(SchemaScan_BareAlgorithmDeclaration(tokens_, it_, localScope))
-			{
-				return true;
-			}
-			// TODO: brace/placement algorithms
-
-			throw std::exception(); // TODO
-		}
-		else
-		{
-			throw std::exception(); // TODO
-		}
-	}
-
-
-	it_ = o;
-	return false;
-}
-bool Translator::Scaner::SchemaScan_BareAlgorithmDeclaration(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Scope>& localScope_)
-{
-	auto o = it_;
-
-
-	if(SchemaScan_Body(tokens_, it_, localScope_))
+	if(Scan_AlgorithmDefinition(tokens_, it_, schema_))
 	{
 		return true;
 	}
 
-
 	it_ = o;
 	return false;
 }
 
-bool Translator::Scaner::SchemaScan_InstanceDeclaration(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Scope>& scope_)
+bool Translator::Structure::Scaner::Scan_AlgorithmDefinition(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Structure::Markers::Schema>& schema_)
 {
 	auto o = it_;
 
-
-	auto keywordMake = Tokens::RequireKeyword(tokens_, it_, Tokens::Keyword::Type::Make);
-	if(keywordMake)
+	if(Scan_BareAlgorithmDefinition(tokens_, it_, schema_))
 	{
-		auto instanceIdentifier = Tokens::RequireIdentifier(tokens_, it_);
-		if(instanceIdentifier)
+		return true;
+	}
+	// TODO
+
+	it_ = o;
+	return false;
+}
+bool Translator::Structure::Scaner::Scan_BareAlgorithmDefinition(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Structure::Markers::Schema>& schema_)
+{
+	auto o = it_;
+
+	if(auto keywordAlgorithm = Move(Tokens::RequireKeyword(tokens_, it_, Tokens::Keyword::Type::Algorithm)))
+	{
+		auto index = schema_->GenerateIndex();
+		auto algorithm = Make<Structure::Markers::Algorithm>(schema_);
+
+		// Stub declaration
+		if(auto specialSemicolon = Move(Tokens::RequireSpecial(tokens_, it_, Tokens::Special::Type::Semicolon)))
 		{
-			auto keywordOf = Tokens::RequireKeyword(tokens_, it_, Tokens::Keyword::Type::Of);
-			if(keywordMake)
+			schema_->Add(index, algorithm);
+
+			return true;
+		}
+
+		if(Scan_Schema(tokens_, it_, schema_))
+		{
+			if(Scan_Body(tokens_, it_, algorithm))
 			{
-				if(SchemaScan_Schema(tokens_, it_, scope_))
+				schema_->Add(index, algorithm);
+
+				return true;
+			}
+			else
+			{
+				// Semi-full declaration
+				if(auto specialSemicolon = Move(Tokens::RequireSpecial(tokens_, it_, Tokens::Special::Type::Semicolon)))
 				{
+					schema_->Add(index, algorithm);
+
 					return true;
 				}
 				else
 				{
-					throw std::exception(); // TODO:
+					// TODO: free order of algorithm properties (throw, etc.)
+					throw Exception();
 				}
-			}
-			else
-			{
-				throw std::exception(); // TODO:
 			}
 		}
 		else
 		{
-			throw std::exception(); // TODO:
+			throw Exception();
 		}
-
-		// TODO: .make <type name>
 	}
-
+	// TODO
 
 	it_ = o;
 	return false;
 }
 
-#pragma endregion
-
-#pragma region AlgorithmScan
-
-Translator::Reference<Translator::Instructions::Block> Translator::Scaner::AlgorithmScan_Block(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Scope>& scope_)
+bool Translator::Structure::Scaner::Scan_Body(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Structure::Markers::Algorithm>& algorithm_)
 {
 	auto o = it_;
 
-
-	Instructions::Block::Name name;
+	if(auto keywordBody = Move(Tokens::RequireKeyword(tokens_, it_, Tokens::Keyword::Type::Body)))
 	{
-		auto keywordBlock = Tokens::RequireKeyword(tokens_, it_, Tokens::Keyword::Type::Block);
-		if(keywordBlock)
+		// Stub declaration
+		if(auto specialSemicolon = Move(Tokens::RequireSpecial(tokens_, it_, Tokens::Special::Type::Semicolon)))
 		{
-			auto identifier = Tokens::RequireIdentifier(tokens_, it_);
-			if(identifier)
+			return true;
+		}
+
+		// Full declaration
+		if(auto openingBrace = Move(Tokens::RequireBrace(tokens_, it_, Translator::Tokens::Brace::Type::Figure, Translator::Tokens::Brace::Position::Begin)))
+		{
+			while(Scan_BodyContent(tokens_, it_, algorithm_));
+
+			if(auto closingBrace = Move(Tokens::RequireBrace(tokens_, it_, Translator::Tokens::Brace::Type::Figure, Translator::Tokens::Brace::Position::End)))
+			{
+				return true;
+			}
+			else
+			{
+				throw Exception("No closing brace");
+			}
+		}
+		else
+		{
+			throw Exception("No opeing brace");
+		}
+	}
+	// TODO
+
+	it_ = o;
+	return false;
+}
+bool Translator::Structure::Scaner::Scan_BodyContent(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Structure::Markers::Algorithm>& algorithm_)
+{
+	auto o = it_;
+
+	if(Scan_SchemaDefinition(tokens_, it_, algorithm_))
+	{
+		return true;
+	}
+
+	it_ = o;
+	return false;
+}
+
+Translator::Reference<Translator::Structure::Markers::Scope> Translator::Structure::Scaner::Scan(const TokensVector& tokens_)
+{
+	auto it = tokens_.cbegin();
+	auto scope = Make<Structure::Markers::Scope>(nullptr);
+
+	while(Scan_SchemaDefinition(tokens_, it, scope));
+
+	if(it != tokens_.cend())
+	{
+		throw Exception();
+	}
+
+	return Move(scope);
+}
+
+#pragma endregion
+
+#pragma endregion
+
+#pragma region Functional
+
+#pragma region Markers
+
+#pragma endregion
+
+#pragma region Scanner
+
+Translator::Reference<Translator::Functional::Markers::Algorithm> Translator::Functional::Scaner::Prepare(const Reference<Structure::Markers::Algorithm>& structureAlgorithm_, const Reference<Markers::Schema>& schema_)
+{
+	auto algorithm = Make<Markers::Algorithm>(schema_);
+
+	for(auto &structureUnit : structureAlgorithm_->GetUnits())
+	{
+		auto name = structureUnit.first;
+		auto unit = Prepare(structureUnit.second, algorithm);
+
+		algorithm->Add(name, unit);
+	}
+
+	return algorithm; // TODO:
+}
+Translator::Reference<Translator::Functional::Markers::Schema> Translator::Functional::Scaner::Prepare(const Reference<Structure::Markers::Schema>& structureSchema_, const Reference<Markers::Scope>& scope_)
+{
+	auto schema = Make<Functional::Markers::Schema>(scope_);
+
+	for(auto &structureUnit : structureSchema_->GetUnits())
+	{
+		auto name = structureUnit.first;
+		auto unit = Prepare(structureUnit.second, schema);
+
+		// schema->Add(name, unit); // Visual Studio BUG
+		schema->Scope::Add(name, unit);
+	}
+
+	for(auto &structureAlgorithm : structureSchema_->GetAlgorithms())
+	{
+		auto index = structureAlgorithm.first;
+		auto algorithm = Prepare(structureAlgorithm.second, schema);
+
+		schema->Add(index, algorithm);
+	}
+	// TODO
+
+	return schema;
+}
+Translator::Reference<Translator::Functional::Markers::Unit> Translator::Functional::Scaner::Prepare(const Reference<Structure::Markers::Unit>& structureUnit_, const Reference<Markers::Scope>& scope_)
+{
+	if(auto structureSchema = Translator::UpCast<Translator::Structure::Markers::Schema>(structureUnit_))
+	{
+		return Prepare(structureSchema, scope_);
+	}
+
+	// TODO
+
+	return nullptr;
+}
+
+bool Translator::Functional::Scaner::Scan_Schema(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Markers::Scope>& scope_, const Reference<Structure::Markers::Scope>& structureScope_)
+{
+	auto o = it_;
+
+	if(Scan_SchemaDefinition(tokens_, it_, scope_, structureScope_))
+	{
+		return true;
+	}
+	if(auto identifier = Tokens::RequireIdentifier(tokens_, it_))
+	{
+		auto name = identifier->GetName();
+
+		if(scope_->IsUnit(name))
+		{
+			auto unit = scope_->Get(name);
+			auto schema = UpCast<Markers::Schema>(unit);
+			return schema != nullptr;
+		}
+		else
+		{
+			return false;
+		}
+	}
+
+	it_ = o;
+	return false;
+}
+bool Translator::Functional::Scaner::Scan_SchemaDefinition(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Markers::Scope>& scope_, const Reference<Structure::Markers::Scope>& structureScope_)
+{
+	auto o = it_;
+
+	if(auto keywordSchema = Move(Tokens::RequireKeyword(tokens_, it_, Tokens::Keyword::Type::Schema)))
+	{
+		Structure::Markers::Schema::Name name;
+		{
+			if(auto identifier = Move(Tokens::RequireIdentifier(tokens_, it_)))
 			{
 				name = identifier->GetName();
 			}
 			else
 			{
-				throw std::exception();
+				name = structureScope_->GenerateName();
 			}
 		}
-	}
 
-	auto openingBrace = Tokens::RequireBrace(tokens_, it_, Tokens::Brace::Type::Figure, Tokens::Brace::Position::Begin);
-	if(openingBrace)
-	{
-		if(name.empty())
-	{
-		name = scope_->GenerateName();
-	}
-
-		auto block = UpCast<Instructions::Block>(scope_->Get(name));
-		if(block)
+		auto structureUnit = structureScope_->GetOwned(name);
+		if(auto structureSchema = UpCast<Structure::Markers::Schema>(structureUnit))
 		{
-			block->ResetGenerator();
+			structureSchema->ResetNaming();
 
-			AlgorithmScan_BlockContent(tokens_, it_, block);
-
-			// Search for closing brace
-			auto closingBrace = Tokens::RequireBrace(tokens_, it_, Tokens::Brace::Type::Figure, Tokens::Brace::Position::End);
-			if(closingBrace)
+			auto unit = scope_->GetOwned(name);
+			if(auto schema = UpCast<Markers::Schema>(unit))
 			{
-				return block;
+
+				if(auto specialSemicolon = Move(Tokens::RequireSpecial(tokens_, it_, Tokens::Special::Type::Semicolon)))
+				{
+					return true;
+				}
+
+				if(auto openingBrace = Move(Tokens::RequireBrace(tokens_, it_, Translator::Tokens::Brace::Type::Figure, Translator::Tokens::Brace::Position::Begin)))
+				{
+					while(Scan_SchemaContent(tokens_, it_, schema, structureSchema));
+
+					if(auto closingBrace = Move(Tokens::RequireBrace(tokens_, it_, Translator::Tokens::Brace::Type::Figure, Translator::Tokens::Brace::Position::End)))
+					{
+						return true;
+					}
+					else
+					{
+						throw Exception("No closing brace");
+					}
+				}
+				else
+				{
+					throw Exception("No opeing brace");
+				}
 			}
 			else
 			{
-				throw std::exception(); // TODO
+				throw Exception("There is no schema");
 			}
 		}
 		else
 		{
-			throw std::exception(); // TODO
+			throw Exception("There is no structure schema");
 		}
-
 	}
-
 
 	it_ = o;
 	return false;
 }
-void Translator::Scaner::AlgorithmScan_BlockContent(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Block>& block_)
-{
-	while(true)
-	{
-		if(AlgorithmScan_SchemaDeclaration(tokens_, it_, block_))
-		{
-			continue;
-		}
-
-		auto block = AlgorithmScan_Block(tokens_, it_, block_);
-		if(block)
-		{
-			// block_->Add(block);
-			continue;
-		}
-
-		if(AlgorithmScan_InstanceDeclaration(tokens_, it_, block_))
-		{
-			auto semicolon = Tokens::RequireSpecial(tokens_, it_, Tokens::Special::Type::Semicolon);
-			if(semicolon)
-			{
-				continue;
-			}
-			else
-			{
-				throw std::exception();
-			}
-		}
-
-		break;
-	}
-}
-
-bool Translator::Scaner::AlgorithmScan_Declaration(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Scope>& scope_)
+bool Translator::Functional::Scaner::Scan_SchemaContent(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Markers::Schema>& schema_, const Reference<Structure::Markers::Schema>& structureSchema_)
 {
 	auto o = it_;
 
-
-	if(AlgorithmScan_SchemaDeclaration(tokens_, it_, scope_))
+	if(Scan_SchemaDefinition(tokens_, it_, schema_, structureSchema_))
+	{
+		return true;
+	}
+	if(Scan_AlgorithmDefinition(tokens_, it_, schema_, structureSchema_))
 	{
 		return true;
 	}
 
+	it_ = o;
+	return false;
+}
+
+bool Translator::Functional::Scaner::Scan_AlgorithmDefinition(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Markers::Schema>& schema_, const Reference<Structure::Markers::Schema>& structureSchema_)
+{
+	auto o = it_;
+
+	if(Scan_BareAlgorithmDefinition(tokens_, it_, schema_, structureSchema_))
+	{
+		return true;
+	}
+	// TODO
 
 	it_ = o;
 	return false;
 }
-Translator::Reference<Translator::Instructions::Schema> Translator::Scaner::AlgorithmScan_SchemaDeclaration(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Scope>& scope_)
+bool Translator::Functional::Scaner::Scan_BareAlgorithmDefinition(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Markers::Schema>& schema_, const Reference<Structure::Markers::Schema>& structureSchema_)
 {
 	auto o = it_;
 
-
-	auto keywordSchema = Tokens::RequireKeyword(tokens_, it_, Tokens::Keyword::Type::Schema);
-	if(keywordSchema)
+	if(auto keywordAlgorithm = Move(Tokens::RequireKeyword(tokens_, it_, Tokens::Keyword::Type::Algorithm)))
 	{
-		auto identifier = Tokens::RequireIdentifier(tokens_, it_);
-		Instructions::Schema::Name name = identifier ? identifier->GetName() : scope_->GenerateName();
+		auto index = structureSchema_->GenerateIndex();
 
-		auto unit = scope_->GetOwned(name);
-		auto schema = UpCast<Instructions::Schema>(unit);
-		if(schema)
+		if(auto structureAlgorithm = structureSchema_->GetOwned(index))
 		{
-			schema->ResetGenerator();
+			structureAlgorithm->ResetNaming();
 
-			auto openingBrace = Tokens::RequireBrace(tokens_, it_, Tokens::Brace::Type::Figure, Tokens::Brace::Position::Begin);
-			if(openingBrace)
+			if(auto algorithm = schema_->GetOwned(index))
 			{
-				// Scan content
-				AlgorithmScan_SchemaContent(tokens_, it_, schema);
-
-				// Search for closing brace
-				auto closingBrace = Tokens::RequireBrace(tokens_, it_, Tokens::Brace::Type::Figure, Tokens::Brace::Position::End);
-				if(closingBrace)
+				// Stub declaration
+				if(auto specialSemicolon = Move(Tokens::RequireSpecial(tokens_, it_, Tokens::Special::Type::Semicolon)))
 				{
-					return schema;
+					return true;
+				}
+
+				if(Scan_Schema(tokens_, it_, schema_, structureSchema_))
+				{
+					if(Scan_Body(tokens_, it_, algorithm, structureAlgorithm))
+					{
+						return true;
+					}
+					else
+					{
+						// Semi-full declaration
+						if(auto specialSemicolon = Move(Tokens::RequireSpecial(tokens_, it_, Tokens::Special::Type::Semicolon)))
+						{
+							return true;
+						}
+						else
+						{
+							// TODO: free order of algorithm properties (throw, etc.)
+							throw Exception();
+						}
+					}
 				}
 				else
 				{
-					throw std::exception(); // TODO
+					throw Exception();
 				}
 			}
 			else
 			{
-				throw std::exception();
+				throw Exception();
 			}
 		}
+		else
+		{
+			throw Exception();
+		}
 	}
-
+	// TODO
 
 	it_ = o;
 	return false;
 }
-void Translator::Scaner::AlgorithmScan_SchemaContent(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Schema>& schema_)
-{
-	while(true)
-	{
-		if(AlgorithmScan_SchemaDeclaration(tokens_, it_, schema_))
-		{
-			continue;
-		}
-
-		if(AlgorithmScan_AlgorithmDeclaration(tokens_, it_, schema_))
-		{
-			continue;
-		}
-
-		break;
-	}
-}
-
-bool Translator::Scaner::AlgorithmScan_Body(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Scope>& scope_)
+bool Translator::Functional::Scaner::Scan_Body(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Markers::Algorithm>& algorithm_, const Reference<Structure::Markers::Algorithm>& structureAlgorithm_)
 {
 	auto o = it_;
 
-
-	auto keywordBody = Tokens::RequireKeyword(tokens_, it_, Tokens::Keyword::Type::Body);
-	if(keywordBody)
+	if(auto keywordBody = Move(Tokens::RequireKeyword(tokens_, it_, Tokens::Keyword::Type::Body)))
 	{
-		// TODO: replace with block scanning
-		auto semicolon = Tokens::RequireSpecial(tokens_, it_, Tokens::Special::Type::Semicolon);
-		if(semicolon)
+		// Stub declaration
+		if(auto specialSemicolon = Move(Tokens::RequireSpecial(tokens_, it_, Tokens::Special::Type::Semicolon)))
 		{
 			return true;
 		}
-		else
+
+		// Full declaration
+		if(auto openingBrace = Move(Tokens::RequireBrace(tokens_, it_, Translator::Tokens::Brace::Type::Figure, Translator::Tokens::Brace::Position::Begin)))
 		{
-			// TODO: scan 1 instruction
-			if(AlgorithmScan_Block(tokens_, it_, scope_))
+			while(Scan_BodyContent(tokens_, it_, algorithm_, structureAlgorithm_));
+
+			if(auto closingBrace = Move(Tokens::RequireBrace(tokens_, it_, Translator::Tokens::Brace::Type::Figure, Translator::Tokens::Brace::Position::End)))
 			{
 				return true;
 			}
 			else
 			{
-				throw std::exception(); // TODO
-			}
-		}
-
-		/*auto openingBrace = Tokens::RequireBrace(tokens_, it_, Tokens::Brace::Type::Figure, Tokens::Brace::Position::Begin);
-		if(openingBrace)
-		{
-			// TODO: scan content
-
-			// Search for closing brace
-			auto closingBrace = Tokens::RequireBrace(tokens_, it_, Tokens::Brace::Type::Figure, Tokens::Brace::Position::End);
-			if(closingBrace)
-			{
-				return true;
-			}
-			else
-			{
-				throw std::exception(); // TODO
-			}
-		}*/
-	}
-
-
-	it_ = o;
-	return false;
-}
-Translator::Reference<Translator::Instructions::Schema> Translator::Scaner::AlgorithmScan_Schema(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Scope>& scope_)
-{
-	auto o = it_;
-
-
-	auto declaration = AlgorithmScan_SchemaDeclaration(tokens_, it_, scope_);
-	if(declaration)
-	{
-		return declaration;
-	}
-
-	auto identifier = Tokens::RequireIdentifier(tokens_, it_);
-	if(identifier)
-	{
-		auto unit = scope_->Get(identifier->GetName());
-		auto schema = UpCast<Instructions::Schema>(unit);
-		if(schema)
-		{
-			return schema;
-		}
-	}
-
-
-	it_ = o;
-	return nullptr;
-}
-bool Translator::Scaner::AlgorithmScan_AlgorithmDeclaration(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Schema>& schema_)
-{
-	auto o = it_;
-
-
-	auto keywordAlgorithm = Tokens::RequireKeyword(tokens_, it_, Tokens::Keyword::Type::Algorithm);
-	if(keywordAlgorithm)
-	{
-		auto name = schema_->GenerateName();
-		auto localScope = UpCast<Instructions::Scope>(schema_->GetOwned(name));
-		{
-			localScope->ResetGenerator();
-		}
-
-		if(localScope)
-		{
-			auto resultSchema = AlgorithmScan_Schema(tokens_, it_, localScope);
-			if(resultSchema)
-			{
-				if(AlgorithmScan_BareAlgorithmDeclaration(tokens_, it_, localScope, resultSchema))
-				{
-					return true;
-				}
-				// TODO: brace/placement algorithms
-
-				throw std::exception(); // TODO
-			}
-			else
-			{
-				throw std::exception(); // TODO
+				throw Exception("No closing brace");
 			}
 		}
 		else
 		{
-			throw std::exception(); // TODO
+			throw Exception("No opeing brace");
 		}
 	}
-
+	// TODO
 
 	it_ = o;
 	return false;
 }
-bool Translator::Scaner::AlgorithmScan_BareAlgorithmDeclaration(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Scope>& localScope_, const Reference<const Instructions::Schema>& resultSchema_)
+bool Translator::Functional::Scaner::Scan_BodyContent(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Markers::Algorithm>& algorithm_, const Reference<Structure::Markers::Algorithm>& structureAlgorithm_)
 {
 	auto o = it_;
 
-
-	if(AlgorithmScan_Body(tokens_, it_, localScope_))
+	if(Scan_SchemaDefinition(tokens_, it_, algorithm_, structureAlgorithm_))
 	{
-		auto algorithm = MakeReference(new Instructions::Algorithms::Bare(localScope_, resultSchema_));
-		auto schema = UpCast<Instructions::Schema>(localScope_->GetScope());
-		if(schema)
-		{
-			schema->Add(algorithm);
-			return true;
-		}
-		else
-		{
-			throw std::exception(); // TODO
-		}
+		return true;
 	}
-	else
-	{
-		throw std::exception(); // TODO
-	}
-
 
 	it_ = o;
 	return false;
 }
 
-bool Translator::Scaner::AlgorithmScan_InstanceDeclaration(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Scope>& scope_)
+
+void Translator::Functional::Scaner::Scan(const TokensVector& tokens_, const Reference<Structure::Markers::Scope> structureScope_)
 {
-	auto o = it_;
+	auto it = tokens_.cbegin();
+	auto scope = Make<Functional::Markers::Scope>(nullptr);
 
-
-	auto keywordMake = Tokens::RequireKeyword(tokens_, it_, Tokens::Keyword::Type::Make);
-	if(keywordMake)
+	// Prepare
+	for(auto &structureUnit : structureScope_->GetUnits())
 	{
-		auto instanceIdentifier = Tokens::RequireIdentifier(tokens_, it_);
-		if(instanceIdentifier)
-		{
-			auto keywordOf = Tokens::RequireKeyword(tokens_, it_, Tokens::Keyword::Type::Of);
-			if(keywordMake)
-			{
-				auto schema = AlgorithmScan_Schema(tokens_, it_, scope_);
-				if(schema)
-				{
-					return true;
-				}
-				else
-				{
-					throw std::exception(); // TODO:
-				}
-			}
-			else
-			{
-				throw std::exception(); // TODO:
-			}
-		}
-		else
-		{
-			throw std::exception(); // TODO:
-		}
+		auto name = structureUnit.first;
+		auto unit = Prepare(structureUnit.second, scope);
 
-		// TODO: .make <type name>
+		scope->Add(name, unit);
 	}
 
+	// Scan
+	structureScope_->ResetNaming();
+	while(Scan_SchemaDefinition(tokens_, it, scope, structureScope_));
 
-	it_ = o;
-	return false;
+	// Check for errors
+	if(it != tokens_.cend())
+	{
+		throw Exception();
+	}
 }
 
 #pragma endregion
 
-#pragma region ExpressionScan
-
-Translator::Reference<Translator::Instructions::Block> Translator::Scaner::ExpressionScan_Block(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Scope>& scope_)
-{
-	auto o = it_;
-
-
-	Instructions::Block::Name name;
-	{
-		auto keywordBlock = Tokens::RequireKeyword(tokens_, it_, Tokens::Keyword::Type::Block);
-		if(keywordBlock)
-		{
-			auto identifier = Tokens::RequireIdentifier(tokens_, it_);
-			if(identifier)
-			{
-				name = identifier->GetName();
-			}
-			else
-			{
-				throw std::exception();
-			}
-		}
-	}
-
-	auto openingBrace = Tokens::RequireBrace(tokens_, it_, Tokens::Brace::Type::Figure, Tokens::Brace::Position::Begin);
-	if(openingBrace)
-	{
-		if(name.empty())
-	{
-		name = scope_->GenerateName();
-	}
-
-		auto block = UpCast<Instructions::Block>(scope_->Get(name));
-		if(block)
-		{
-			block->ResetGenerator();
-
-			ExpressionScan_BlockContent(tokens_, it_, block);
-
-			// Search for closing brace
-			auto closingBrace = Tokens::RequireBrace(tokens_, it_, Tokens::Brace::Type::Figure, Tokens::Brace::Position::End);
-			if(closingBrace)
-			{
-				return block;
-			}
-			else
-			{
-				throw std::exception(); // TODO
-			}
-		}
-		else
-		{
-			throw std::exception(); // TODO
-		}
-
-	}
-
-
-	it_ = o;
-	return false;
-}
-void Translator::Scaner::ExpressionScan_BlockContent(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Block>& block_)
-{
-	while(true)
-	{
-		if(ExpressionScan_SchemaDeclaration(tokens_, it_, block_))
-		{
-			continue;
-		}
-
-		auto block = ExpressionScan_Block(tokens_, it_, block_);
-		if(block)
-		{
-			block_->Add(block);
-			continue;
-		}
-
-		auto instance = ExpressionScan_InstanceDeclaration(tokens_, it_, block_);
-		if(instance)
-		{
-			auto semicolon = Tokens::RequireSpecial(tokens_, it_, Tokens::Special::Type::Semicolon);
-			if(semicolon)
-			{
-				continue;
-			}
-			else
-			{
-				throw std::exception();
-			}
-		}
-
-		break;
-	}
-}
-
-bool Translator::Scaner::ExpressionScan_Declaration(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Scope>& scope_)
-{
-	auto o = it_;
-
-
-	if(ExpressionScan_SchemaDeclaration(tokens_, it_, scope_))
-	{
-		return true;
-	}
-
-
-	it_ = o;
-	return false;
-}
-Translator::Reference<Translator::Instructions::Schema> Translator::Scaner::ExpressionScan_SchemaDeclaration(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Scope>& scope_)
-{
-	auto o = it_;
-
-
-	auto keywordSchema = Tokens::RequireKeyword(tokens_, it_, Tokens::Keyword::Type::Schema);
-	if(keywordSchema)
-	{
-		auto identifier = Tokens::RequireIdentifier(tokens_, it_);
-		Instructions::Schema::Name name = identifier ? identifier->GetName() : scope_->GenerateName();
-
-		auto unit = scope_->GetOwned(name);
-		auto schema = UpCast<Instructions::Schema>(unit);
-		if(schema)
-		{
-			schema->ResetGenerator();
-
-			auto openingBrace = Tokens::RequireBrace(tokens_, it_, Tokens::Brace::Type::Figure, Tokens::Brace::Position::Begin);
-			if(openingBrace)
-			{
-				// Scan content
-				ExpressionScan_SchemaContent(tokens_, it_, schema);
-
-				// Search for closing brace
-				auto closingBrace = Tokens::RequireBrace(tokens_, it_, Tokens::Brace::Type::Figure, Tokens::Brace::Position::End);
-				if(closingBrace)
-				{
-					return schema;
-				}
-				else
-				{
-					throw std::exception(); // TODO
-				}
-			}
-			else
-			{
-				throw std::exception();
-			}
-		}
-	}
-
-
-	it_ = o;
-	return false;
-}
-void Translator::Scaner::ExpressionScan_SchemaContent(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Schema>& schema_)
-{
-	while(true)
-	{
-		if(ExpressionScan_SchemaDeclaration(tokens_, it_, schema_))
-		{
-			continue;
-		}
-
-		if(ExpressionScan_AlgorithmDeclaration(tokens_, it_, schema_))
-		{
-			continue;
-		}
-
-		break;
-	}
-}
-
-bool Translator::Scaner::ExpressionScan_Body(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Algorithm>& algorithm_)
-{
-	auto o = it_;
-
-
-	auto keywordBody = Tokens::RequireKeyword(tokens_, it_, Tokens::Keyword::Type::Body);
-	if(keywordBody)
-	{
-		// TODO: replace with block scanning
-		auto semicolon = Tokens::RequireSpecial(tokens_, it_, Tokens::Special::Type::Semicolon);
-		if(semicolon)
-		{
-			return true;
-		}
-		else
-		{
-			// TODO: scan 1 instruction
-			auto block = ExpressionScan_Block(tokens_, it_, algorithm_->GetLocalScope());
-			if(block)
-			{
-				algorithm_->SetCommand(block);
-				return true;
-			}
-			else
-			{
-				throw std::exception(); // TODO
-			}
-		}
-
-		/*auto openingBrace = Tokens::RequireBrace(tokens_, it_, Tokens::Brace::Type::Figure, Tokens::Brace::Position::Begin);
-		if(openingBrace)
-		{
-			// TODO: scan content
-
-			// Search for closing brace
-			auto closingBrace = Tokens::RequireBrace(tokens_, it_, Tokens::Brace::Type::Figure, Tokens::Brace::Position::End);
-			if(closingBrace)
-			{
-				return true;
-			}
-			else
-			{
-				throw std::exception(); // TODO
-			}
-		}*/
-	}
-
-
-	it_ = o;
-	return false;
-}
-Translator::Reference<Translator::Instructions::Schema> Translator::Scaner::ExpressionScan_Schema(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Scope>& scope_)
-{
-	auto o = it_;
-
-
-	auto declaration = ExpressionScan_SchemaDeclaration(tokens_, it_, scope_);
-	if(declaration)
-	{
-		return declaration;
-	}
-
-	auto identifier = Tokens::RequireIdentifier(tokens_, it_);
-	if(identifier)
-	{
-		auto unit = scope_->Get(identifier->GetName());
-		auto schema = UpCast<Instructions::Schema>(unit);
-		if(schema)
-		{
-			return schema;
-		}
-	}
-
-
-	it_ = o;
-	return nullptr;
-}
-bool Translator::Scaner::ExpressionScan_AlgorithmDeclaration(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Schema>& schema_)
-{
-	auto o = it_;
-
-
-	auto keywordAlgorithm = Tokens::RequireKeyword(tokens_, it_, Tokens::Keyword::Type::Algorithm);
-	if(keywordAlgorithm)
-	{
-		auto name = schema_->GenerateName();
-		auto localScope = UpCast<Instructions::Scope>(schema_->GetOwned(name));
-		{
-			localScope->ResetGenerator();
-		}
-
-		if(localScope)
-		{
-			auto resultSchema = ExpressionScan_Schema(tokens_, it_, localScope);
-			if(resultSchema)
-			{
-				auto algorithm = schema_->Get(resultSchema);
-
-				if(ExpressionScan_BareAlgorithmDeclaration(tokens_, it_, algorithm))
-				{
-					return true;
-				}
-				// TODO: brace/placement algorithms
-
-				throw std::exception(); // TODO
-			}
-			else
-			{
-				throw std::exception(); // TODO
-			}
-		}
-		else
-		{
-			throw std::exception(); // TODO
-		}
-	}
-
-
-	it_ = o;
-	return false;
-}
-bool Translator::Scaner::ExpressionScan_BareAlgorithmDeclaration(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Algorithms::Bare>& algorithm_)
-{
-	auto o = it_;
-
-
-	if(ExpressionScan_Body(tokens_, it_, algorithm_))
-	{
-		return true;
-	}
-	else
-	{
-		throw std::exception(); // TODO
-	}
-
-
-	it_ = o;
-	return false;
-}
-
-Translator::Reference<Translator::Instructions::Instance> Translator::Scaner::ExpressionScan_InstanceDeclaration(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Instructions::Scope>& scope_)
-{
-	auto o = it_;
-
-
-	auto keywordMake = Tokens::RequireKeyword(tokens_, it_, Tokens::Keyword::Type::Make);
-	if(keywordMake)
-	{
-		auto instanceIdentifier = Tokens::RequireIdentifier(tokens_, it_);
-		if(instanceIdentifier)
-		{
-			auto keywordOf = Tokens::RequireKeyword(tokens_, it_, Tokens::Keyword::Type::Of);
-			if(keywordMake)
-			{
-				auto schema = AlgorithmScan_Schema(tokens_, it_, scope_);
-				if(schema)
-				{
-					auto name = !instanceIdentifier->GetName().empty() ?
-						instanceIdentifier->GetName() :
-						scope_->GenerateName();
-					auto instance = MakeReference(new Instructions::Instance(scope_, name, schema));
-
-					scope_->Add(name, instance);
-
-					return instance;
-				}
-				else
-				{
-					throw std::exception(); // TODO:
-				}
-			}
-			else
-			{
-				throw std::exception(); // TODO:
-			}
-		}
-		else
-		{
-			throw std::exception(); // TODO:
-		}
-
-		// TODO: .make <type name>
-	}
-
-
-	it_ = o;
-	return false;
-}
-
 #pragma endregion
-
-
-Translator::Reference<Translator::Instructions::Scope> Translator::Scaner::Parse(const TokensVector& tokens_)
-{
-	auto scope = Reference<Instructions::Scope>(new Instructions::Scope(nullptr, "<header>"));
-
-	// Type scanning
-	scope->ResetGenerator();
-	auto it = tokens_.begin();
-	while(it != tokens_.end())
-	{
-		auto o = it;
-
-		if(SchemaScan_Declaration(tokens_, it, scope))
-		{
-			continue;
-		}
-
-		if(it == o)
-		{
-			throw std::exception("Tokens not parsed");
-		}
-	}
-
-	// Algorithm scan
-	scope->ResetGenerator();
-	it = tokens_.begin();
-	while(it != tokens_.end())
-	{
-		auto o = it;
-
-		if(AlgorithmScan_Declaration(tokens_, it, scope))
-		{
-			continue;
-		}
-
-		if(it == o)
-		{
-			throw std::exception("Tokens not parsed");
-		}
-	}
-
-	// Algorithm scan
-	scope->ResetGenerator();
-	it = tokens_.begin();
-	while(it != tokens_.end())
-	{
-		auto o = it;
-
-		if(ExpressionScan_Declaration(tokens_, it, scope))
-		{
-			continue;
-		}
-
-		if(it == o)
-		{
-			throw std::exception("Tokens not parsed");
-		}
-	}
-
-	return scope;
-}
 
 #pragma endregion
 

@@ -18,8 +18,11 @@ void main()
 	Lexer lexer;
 	auto tokens = Move(lexer.Parse(source));
 
-	Scaner scaner;
-	auto scope = scaner.Parse(tokens);
+	Structure::Scaner structureScaner;
+	auto structureScope = structureScaner.Scan(tokens);
+
+	Functional::Scaner functionalScaner;
+	functionalScaner.Scan(tokens, structureScope);
 
 	std::system("pause");
 }

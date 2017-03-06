@@ -1,6 +1,8 @@
 #include "Lexer.hpp"
 
 
+#pragma region Translator
+
 Translator::Reference<const Translator::Token> Translator::Tokens::RequireToken(const TokensVector& tokens, Translator::TokensVector::const_iterator& it, Translator::Token::Type type)
 {
 	auto o = it;
@@ -304,7 +306,7 @@ Translator::TokensVector Translator::Lexer::Parse(const Glyphs& glyphs_)
 			auto j = i;
 			while(j < glyphs_.size() && IsSymbolicGroup(glyphs_[j])) ++j;
 			String identifierName = glyphs_.substr(i, j - i);
-			auto token = MakeReference(new Tokens::Identifier(identifierName));
+			auto token = Make<Tokens::Identifier>(identifierName);
 			tokens.push_back(std::move(token));
 			i = j;
 			continue;
@@ -314,7 +316,7 @@ Translator::TokensVector Translator::Lexer::Parse(const Glyphs& glyphs_)
 			auto j = i;
 			while(j < glyphs_.size() && IsOperatorGroup(glyphs_[j])) ++j;
 			auto identifierName = glyphs_.substr(i, j - i);
-			auto token = MakeReference(new Tokens::Identifier(identifierName));
+			auto token = Make<Tokens::Identifier>(identifierName);
 			tokens.push_back(std::move(token));
 			i = j;
 			continue;
@@ -333,7 +335,7 @@ Translator::TokensVector Translator::Lexer::Parse(const Glyphs& glyphs_)
 						if(!check(literalBitSource)) throw std::exception(String("not " + std::to_string(bit) + "-decimal!").c_str());
 
 						auto literalValue = std::strtol(literalSource.c_str(), nullptr, bit);
-						auto literalInteger = MakeReference(new Tokens::Literals::Integer(literalValue));
+						auto literalInteger = Make<Tokens::Literals::Integer>(literalValue);
 
 						tokens.push_back(literalInteger);
 					};
@@ -367,7 +369,7 @@ Translator::TokensVector Translator::Lexer::Parse(const Glyphs& glyphs_)
 							auto literalExponentValue = std::strtol(literalExponentSource.c_str(), nullptr, 10);
 
 							auto literalValue = literalBaseValue * powf(10.0, (float)literalExponentValue);
-							auto literalFloating = MakeReference(new Tokens::Literals::Floating(literalValue));
+							auto literalFloating = Make<Tokens::Literals::Floating>(literalValue);
 
 							tokens.push_back(literalFloating);
 						}
@@ -376,7 +378,7 @@ Translator::TokensVector Translator::Lexer::Parse(const Glyphs& glyphs_)
 							if(!check(literalBitSource)) throw std::exception(String("not floating!").c_str());
 
 							auto literalValue = std::strtof(literalSource.c_str(), nullptr);
-							auto literalFloating = MakeReference(new Tokens::Literals::Floating(literalValue));
+							auto literalFloating = Make<Tokens::Literals::Floating>(literalValue);
 
 							tokens.push_back(literalFloating);
 						}
@@ -454,7 +456,7 @@ Translator::TokensVector Translator::Lexer::Parse(const Glyphs& glyphs_)
 				while(j < glyphs_.size() && glyphs_[j] != '\"') ++j;
 				auto literalSource = glyphs_.substr(i + 1, j - (i + 1));
 
-				auto literalString = MakeReference(new Tokens::Literals::String(literalSource));
+				auto literalString = Make<Tokens::Literals::String>(literalSource);
 				tokens.push_back(literalString);
 
 				i = j;
@@ -467,137 +469,95 @@ Translator::TokensVector Translator::Lexer::Parse(const Glyphs& glyphs_)
 				auto keywordSource = glyphs_.substr(i, j - i);
 
 				([&]{
-					/*if(keywordSource == ".true")
+					if(keywordSource == ".block")
 					{
-						auto literalTrue = new Tokens::Literals::Boolean(true);
-						tokens.push_back(literalTrue);
-						i = j - 1;
-						return;
-					}
-					if(keywordSource == ".false")
-					{
-						auto literalTrue = new Tokens::Literals::Boolean(false);
-						tokens.push_back(literalTrue);
-						i = j - 1;
-						return;
-					}*/
-					/*if(keywordSource == ".block")
-					{
-						auto keyword = new Tokens::Keyword(Tokens::Keyword::Type::Block);
+						auto keyword = Make<Tokens::Keyword>(Tokens::Keyword::Type::Block);
 						tokens.push_back(keyword);
 						i = j - 1;
 						return;
 					}
 					if(keywordSource == ".space")
 					{
-						auto keyword = new Tokens::Keyword(Tokens::Keyword::Type::Space);
+						auto keyword = Make<Tokens::Keyword>(Tokens::Keyword::Type::Space);
 						tokens.push_back(keyword);
 						i = j - 1;
 						return;
 					}
-					if(keywordSource == ".type")
-					{
-						auto keyword = new Tokens::Keyword(Tokens::Keyword::Type::Type);
-						tokens.push_back(keyword);
-						i = j - 1;
-						return;
-					}
-					if(keywordSource == ".make")
-					{
-						auto keyword = new Tokens::Keyword(Tokens::Keyword::Type::Make);
-						tokens.push_back(keyword);
-						i = j - 1;
-						return;
-					}
-					if(keywordSource == ".alias")
-					{
-						auto keyword = new Tokens::Keyword(Tokens::Keyword::Type::Alias);
-						tokens.push_back(keyword);
-						i = j - 1;
-						return;
-					}*/
 					if(keywordSource == ".schema")
 					{
-						auto keyword = MakeReference(new Tokens::Keyword(Tokens::Keyword::Type::Schema));
+						auto keyword = Make<Tokens::Keyword>(Tokens::Keyword::Type::Schema);
 						tokens.push_back(keyword);
 						i = j - 1;
 						return;
 					}
 					if(keywordSource == ".make")
 					{
-						auto keyword = MakeReference(new Tokens::Keyword(Tokens::Keyword::Type::Make));
+						auto keyword = Make<Tokens::Keyword>(Tokens::Keyword::Type::Make);
 						tokens.push_back(keyword);
 						i = j - 1;
 						return;
 					}
 					if(keywordSource == ".of")
 					{
-						auto keyword = MakeReference(new Tokens::Keyword(Tokens::Keyword::Type::Of));
+						auto keyword = Make<Tokens::Keyword>(Tokens::Keyword::Type::Of);
 						tokens.push_back(keyword);
 						i = j - 1;
 						return;
 					}
 					if(keywordSource == ".algorithm")
 					{
-						auto keyword = MakeReference(new Tokens::Keyword(Tokens::Keyword::Type::Algorithm));
+						auto keyword = Make<Tokens::Keyword>(Tokens::Keyword::Type::Algorithm);
 						tokens.push_back(keyword);
 						i = j - 1;
 						return;
 					}
 					if(keywordSource == ".body")
 					{
-						auto keyword = MakeReference(new Tokens::Keyword(Tokens::Keyword::Type::Body));
-						tokens.push_back(keyword);
-						i = j - 1;
-						return;
-					}
-					if(keywordSource == ".block")
-					{
-						auto keyword = MakeReference(new Tokens::Keyword(Tokens::Keyword::Type::Block));
+						auto keyword = Make<Tokens::Keyword>(Tokens::Keyword::Type::Body);
 						tokens.push_back(keyword);
 						i = j - 1;
 						return;
 					}
 
-					auto tokenDot = MakeReference(new Tokens::Special(Tokens::Special::Type::Dot));
+					auto tokenDot = Make<Tokens::Special>(Tokens::Special::Type::Dot);
 					tokens.push_back(tokenDot);
 				})();
 			} break;
 			case ',':
 			{
-				tokens.push_back(MakeReference(new Tokens::Special(Tokens::Special::Type::Comma)));
+				tokens.push_back(Make<Tokens::Special>(Tokens::Special::Type::Comma));
 			} break;
 			case ':':
 			{
-				tokens.push_back(MakeReference(new Tokens::Special(Tokens::Special::Type::Colon)));
+				tokens.push_back(Make<Tokens::Special>(Tokens::Special::Type::Colon));
 			} break;
 			case ';':
 			{
-				tokens.push_back(MakeReference(new Tokens::Special(Tokens::Special::Type::Semicolon)));
+				tokens.push_back(Make<Tokens::Special>(Tokens::Special::Type::Semicolon));
 			} break;
 			case '{':
 			{
-				tokens.push_back(MakeReference(new Tokens::Brace(Tokens::Brace::Type::Figure, Tokens::Brace::Position::Begin)));
+				tokens.push_back(Make<Tokens::Brace>(Tokens::Brace::Type::Figure, Tokens::Brace::Position::Begin));
 			} break;
 			case '}':
 			{
-				tokens.push_back(MakeReference(new Tokens::Brace(Tokens::Brace::Type::Figure, Tokens::Brace::Position::End)));
+				tokens.push_back(Make<Tokens::Brace>(Tokens::Brace::Type::Figure, Tokens::Brace::Position::End));
 			} break;
 			case '(':
 			{
-				tokens.push_back(MakeReference(new Tokens::Brace(Tokens::Brace::Type::Round, Tokens::Brace::Position::Begin)));
+				tokens.push_back(Make<Tokens::Brace>(Tokens::Brace::Type::Round, Tokens::Brace::Position::Begin));
 			} break;
 			case ')':
 			{
-				tokens.push_back(MakeReference(new Tokens::Brace(Tokens::Brace::Type::Round, Tokens::Brace::Position::End)));
+				tokens.push_back(Make<Tokens::Brace>(Tokens::Brace::Type::Round, Tokens::Brace::Position::End));
 			} break;
 			case '[':
 			{
-				tokens.push_back(MakeReference(new Tokens::Brace(Tokens::Brace::Type::Square, Tokens::Brace::Position::Begin)));
+				tokens.push_back(Make<Tokens::Brace>(Tokens::Brace::Type::Square, Tokens::Brace::Position::Begin));
 			} break;
 			case ']':
 			{
-				tokens.push_back(MakeReference(new Tokens::Brace(Tokens::Brace::Type::Square, Tokens::Brace::Position::End)));
+				tokens.push_back(Make<Tokens::Brace>(Tokens::Brace::Type::Square, Tokens::Brace::Position::End));
 			} break;
 			default: break;
 		}
@@ -607,4 +567,5 @@ Translator::TokensVector Translator::Lexer::Parse(const Glyphs& glyphs_)
 	return Move(tokens);
 }
 
+#pragma endregion
 

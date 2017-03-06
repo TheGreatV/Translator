@@ -1,9 +1,26 @@
+.schema;
+.schema {
+	.algorithm;
+	.algorithm A;
+	.algorithm A .body {
+		.schema;
+	}
+	.algorithm .schema; .body;
+	.algorithm .schema #; .body;
+	.algorithm .schema {
+		.schema { .algorithm; }
+	} .body;
+}
+.schema { .schema A {} }
+.schema A { .schema A { .schema A {} } }
+
+`{
 .schema A {
 	.algorithm A .body {
 		.make a .of A;
 	}
 }
-`{
+
 .make A + -.make B;
 
 Parse:

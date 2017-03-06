@@ -55,7 +55,8 @@ namespace Translator
 		TokensVector Parse(const Glyphs& glyphs_);
 	};
 
-	class Token
+	class Token:
+		public This<Token>
 	{
 	public:
 		enum class Type
@@ -68,10 +69,10 @@ namespace Translator
 			Special
 		};
 	public:
-		Token() = default;
-		Token(const Token&) = default;
+		inline Token(const Reference<Token>& this_);
+		inline Token(const Token&) = default;
 		virtual ~Token() = default;
-		Token& operator = (const Token&) = default;
+		inline Token& operator = (const Token&) = default;
 	public:
 		virtual Token::Type GetTokenType() const = 0;
 	public:
@@ -84,13 +85,14 @@ namespace Translator
 			public Named
 		{
 		public:
-			inline Identifier(const Name& name_):
+			inline Identifier(const Reference<Identifier>& this_, const Name& name_):
+				Token(this_),
 				Named(name_)
 			{
 			}
 			inline Identifier(const Identifier&) = default;
 			virtual ~Identifier() override = default;
-			Identifier& operator = (const Identifier&) = default;
+			Identifier& operator = (const Identifier&) = delete;
 		public:
 			virtual operator String() const override
 			{
@@ -114,7 +116,10 @@ namespace Translator
 				String
 			};
 		public:
-			inline Literal() = default;
+			inline Literal(const Reference<Literal>& this_):
+				Token(this_)
+			{
+			}
 			inline Literal(const Literal&) = default;
 			virtual ~Literal() override = default;
 			Literal& operator = (const Literal&) = default;
@@ -136,7 +141,8 @@ namespace Translator
 				const Value value;
 			public:
 				inline Boolean() = delete;
-				inline Boolean(const Value& value_):
+				inline Boolean(const Reference<Boolean>& this_, const Value& value_):
+					Literal(Cast<Literal>(this_)),
 					value(value_)
 				{
 				}
@@ -163,7 +169,8 @@ namespace Translator
 				const Value value;
 			public:
 				inline Integer() = delete;
-				inline Integer(const Value& value_):
+				inline Integer(const Reference<Integer>& this_, const Value& value_):
+					Literal(Cast<Literal>(this_)),
 					value(value_)
 				{
 				}
@@ -188,7 +195,8 @@ namespace Translator
 				const float value;
 			public:
 				inline Floating() = delete;
-				inline Floating(float value_):
+				inline Floating(const Reference<Floating>& this_, float value_):
+					Literal(Cast<Literal>(this_)),
 					value(value_)
 				{
 				}
@@ -215,7 +223,8 @@ namespace Translator
 				const Value value;
 			public:
 				inline String() = delete;
-				inline String(const Value& value_):
+				inline String(const Reference<String>& this_, const Value& value_):
+					Literal(Cast<Literal>(this_)),
 					value(value_)
 				{
 				}
@@ -241,15 +250,16 @@ namespace Translator
 			enum class Type
 			{
 				None,
-				Schema, Make, Of,
+				Block, Space, Schema,
+				Make, Of,
 				Algorithm, Body,
-				Block,
 			};
 		public:
 			const Keyword::Type type;
 		public:
 			inline Keyword() = delete;
-			inline Keyword(Keyword::Type type_):
+			inline Keyword(const Reference<Token>& this_, const Keyword::Type type_):
+				Token(this_),
 				type(type_)
 			{
 			}
@@ -261,12 +271,13 @@ namespace Translator
 			{
 				switch(type)
 				{
+					case Keyword::Type::Block: return "Block";
+					case Keyword::Type::Space: return "Space";
 					case Keyword::Type::Schema: return "Schema";
 					case Keyword::Type::Make: return "Make";
 					case Keyword::Type::Of: return "Of";
 					case Keyword::Type::Algorithm: return "Algorithm";
 					case Keyword::Type::Body: return "Body";
-					case Keyword::Type::Block: return "Block";
 					default: throw std::exception("Unknown keyword type");
 				}
 			}
@@ -296,7 +307,8 @@ namespace Translator
 			const Brace::Position position;
 		public:
 			inline Brace() = delete;
-			inline Brace(const Brace::Type& type_, const Brace::Position& position_):
+			inline Brace(const Reference<Brace>& this_, const Brace::Type& type_, const Brace::Position& position_):
+				Token(this_),
 				type(type_),
 				position(position_)
 			{
@@ -351,7 +363,8 @@ namespace Translator
 			const Type type;
 		public:
 			inline Special() = delete;
-			inline Special(Special::Type type_):
+			inline Special(const Reference<Special>& this_, Special::Type type_):
+				Token(this_),
 				type(type_)
 			{
 			}
@@ -377,7 +390,6 @@ namespace Translator
 			}
 		};
 
-
 		Reference<const Token> RequireToken(const TokensVector& tokens_, TokensVector::const_iterator& it_, Token::Type type_ = Token::Type::None);
 		Reference<const Tokens::Keyword> RequireKeyword(const TokensVector& tokens_, TokensVector::const_iterator& it_, Tokens::Keyword::Type type_ = Tokens::Keyword::Type::None);
 		Reference<const Tokens::Identifier> RequireIdentifier(const TokensVector& tokens_, TokensVector::const_iterator& it_, std::string name_ = "");
@@ -387,5 +399,21 @@ namespace Translator
 }
 
 
+#pragma region Translator
+
+#pragma region Token
+
+inline Translator::Token::Token(const Reference<Token>& this_):
+	This(this_)
+{
+}
+
+#pragma endregion
+
+#pragma endregion
+
+
+#pragma region
+#pragma endregion
 
 
