@@ -228,6 +228,7 @@ bool Translator::Structure::Scaner::Scan_BodyContent(const TokensVector& tokens_
 	return false;
 }
 
+
 Translator::Reference<Translator::Structure::Markers::Scope> Translator::Structure::Scaner::Scan(const TokensVector& tokens_)
 {
 	auto it = tokens_.cbegin();
@@ -305,13 +306,13 @@ Translator::Reference<Translator::Functional::Markers::Unit> Translator::Functio
 	return nullptr;
 }
 
-bool Translator::Functional::Scaner::Scan_Schema(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Markers::Scope>& scope_, const Reference<Structure::Markers::Scope>& structureScope_)
+Translator::Reference<Translator::Functional::Markers::Schema> Translator::Functional::Scaner::Scan_Schema(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Markers::Scope>& scope_, const Reference<Structure::Markers::Scope>& structureScope_)
 {
 	auto o = it_;
 
-	if(Scan_SchemaDefinition(tokens_, it_, scope_, structureScope_))
+	if(auto schemaDefinition = Scan_SchemaDefinition(tokens_, it_, scope_, structureScope_))
 	{
-		return true;
+		return schemaDefinition;
 	}
 	if(auto identifier = Tokens::RequireIdentifier(tokens_, it_))
 	{
@@ -321,7 +322,7 @@ bool Translator::Functional::Scaner::Scan_Schema(const TokensVector& tokens_, To
 		{
 			auto unit = scope_->Get(name);
 			auto schema = UpCast<Markers::Schema>(unit);
-			return schema != nullptr;
+			return schema;
 		}
 		else
 		{
@@ -330,9 +331,9 @@ bool Translator::Functional::Scaner::Scan_Schema(const TokensVector& tokens_, To
 	}
 
 	it_ = o;
-	return false;
+	return nullptr;
 }
-bool Translator::Functional::Scaner::Scan_SchemaDefinition(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Markers::Scope>& scope_, const Reference<Structure::Markers::Scope>& structureScope_)
+Translator::Reference<Translator::Functional::Markers::Schema> Translator::Functional::Scaner::Scan_SchemaDefinition(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Markers::Scope>& scope_, const Reference<Structure::Markers::Scope>& structureScope_)
 {
 	auto o = it_;
 
@@ -361,7 +362,7 @@ bool Translator::Functional::Scaner::Scan_SchemaDefinition(const TokensVector& t
 
 				if(auto specialSemicolon = Move(Tokens::RequireSpecial(tokens_, it_, Tokens::Special::Type::Semicolon)))
 				{
-					return true;
+					return schema;
 				}
 
 				if(auto openingBrace = Move(Tokens::RequireBrace(tokens_, it_, Translator::Tokens::Brace::Type::Figure, Translator::Tokens::Brace::Position::Begin)))
@@ -370,7 +371,7 @@ bool Translator::Functional::Scaner::Scan_SchemaDefinition(const TokensVector& t
 
 					if(auto closingBrace = Move(Tokens::RequireBrace(tokens_, it_, Translator::Tokens::Brace::Type::Figure, Translator::Tokens::Brace::Position::End)))
 					{
-						return true;
+						return schema;
 					}
 					else
 					{
@@ -394,7 +395,7 @@ bool Translator::Functional::Scaner::Scan_SchemaDefinition(const TokensVector& t
 	}
 
 	it_ = o;
-	return false;
+	return nullptr;
 }
 bool Translator::Functional::Scaner::Scan_SchemaContent(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Markers::Schema>& schema_, const Reference<Structure::Markers::Schema>& structureSchema_)
 {
@@ -446,8 +447,11 @@ bool Translator::Functional::Scaner::Scan_BareAlgorithmDefinition(const TokensVe
 					return true;
 				}
 
-				if(Scan_Schema(tokens_, it_, schema_, structureSchema_))
+				if(auto resultSchema = Scan_Schema(tokens_, it_, schema_, structureSchema_))
 				{
+					auto argument = Make<Markers::Arguments::Bare>(algorithm, resultSchema);
+					algorithm->SetArgument(argument);
+
 					if(Scan_Body(tokens_, it_, algorithm, structureAlgorithm))
 					{
 						return true;

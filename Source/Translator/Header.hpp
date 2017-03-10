@@ -7,6 +7,7 @@
 #include <vector>
 #include <list>
 #include <map>
+#include <set>
 #include <algorithm>
 
 
@@ -15,6 +16,7 @@ namespace Translator
 	// Usings
 	using Size = std::size_t;
 	using String = std::string;
+	using WString = std::wstring;
 	template<class First, class Second> using Pair = std::pair<First, Second>;
 
 	template<class Type> using Memory = Type*;
@@ -26,6 +28,8 @@ namespace Translator
 	template<class Type> using Vector = std::vector<Type>;
 	template<class Type> using List = std::list<Type>;
 	template<class Key, class Value> using Dictionary = std::map<Key, Value>;
+	template<class Type> using Set = std::set<Type>;
+	template<class Type> using Initializer = std::initializer_list<Type>;
 
 
 	// Types
@@ -46,13 +50,14 @@ namespace Translator
 	template<class Type> inline typename std::remove_reference<Type>::type&& Move(Type&& type_);
 	template<class Type> inline Type&& Forward(typename std::remove_reference<Type>::type& type_);
 
-	template<class Type> inline Pointer<Type> WrapPointer(const Type* type_);
+	template<class Type> inline Pointer<Type> WrapPointer(Type*const type_);
+	template<class Type> inline Pointer<const Type> WrapPointer(const Type*const type_);
 	template<class Type, class...Arguments> inline Pointer<Type> MakePointer(Arguments&&...arguments_);
 
 	template<class Type> inline Link<Type> MakeLink(const Reference<Type>& reference_);
 
-	template<class Type> inline Reference<Type> WrapReference(Type* type_);
-	template<class Type> inline Reference<const Type> WrapConstReference(const Type* type_);
+	template<class Type> inline Reference<Type> WrapReference(Type*const type_);
+	template<class Type> inline Reference<const Type> WrapReference(const Type*const type_);
 	template<class Type> inline Reference<Type> MakeReference(const Link<Type>& link_);
 	template<class Type, class...Arguments> inline Reference<Type> MakeReference(Arguments&&...arguments_);
 
@@ -226,9 +231,15 @@ template<class Type> inline Type&& Translator::Forward(typename std::remove_refe
 
 
 template<class Type>
-inline Translator::Pointer<Type> Translator::WrapPointer(const Type* type_)
+inline Translator::Pointer<Type> Translator::WrapPointer(Type*const type_)
 {
 	return Move(Pointer<Type>(type_));
+}
+
+template<class Type>
+inline Translator::Pointer<const Type> Translator::WrapPointer(const Type*const type_)
+{
+	return Move(Pointer<const Type>(type_));
 }
 
 template<class Type, class...Arguments>
@@ -244,13 +255,13 @@ inline Translator::Link<Type> Translator::MakeLink(const Reference<Type>& refere
 }
 
 template<class Type>
-inline Translator::Reference<Type> Translator::WrapReference(Type* type_)
+inline Translator::Reference<Type> Translator::WrapReference(Type*const type_)
 {
 	return Move(Reference<Type>(type_));
 }
 
 template<class Type>
-inline Translator::Reference<const Type> Translator::WrapConstReference(const Type* type_)
+inline Translator::Reference<const Type> Translator::WrapReference(const Type*const type_)
 {
 	return Move(Reference<const Type>(type_));
 }
@@ -305,7 +316,6 @@ inline Translator::Reference<Type> Translator::Make(Arguments&&...arguments_)
 
 	return Move(shared);
 }
-
 
 #pragma endregion
 

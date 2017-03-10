@@ -37,6 +37,13 @@ namespace Translator
 			class Schema;
 
 			class Algorithm;
+			class Argument;
+			namespace Arguments
+			{
+				class Bare;
+				class Brace;
+				class Placement;
+			}
 		}
 
 		class Scaner;
@@ -210,7 +217,7 @@ namespace Translator
 			public:
 				using Index = Size;
 			protected:
-				Dictionary<Index, Reference<Algorithm>> algorithms;
+				Dictionary<Index, Reference<Algorithm>> algorithmsStubs;
 			public:
 				inline Schema(const Reference<Schema>& this_, const Reference<Scope>& scope_);
 			public:
@@ -223,11 +230,37 @@ namespace Translator
 			{
 			protected:
 				const Link<Schema> schema;
+				Reference<Argument> argument;
 			public:
 				inline Algorithm(const Reference<Algorithm>& this_, const Reference<Schema>& schema_);
 			public:
 				inline Reference<Schema> GetSchema() const;
+				inline Reference<Argument> GetArgument() const;
+				inline void SetArgument(const Reference<Argument>& argument_);
 			};
+			class Argument:
+				public Marker
+			{
+			protected:
+				const Link<Algorithm> algorithm;
+			public:
+				inline Argument(const Reference<Argument>& this_, const Reference<Algorithm>& algorithm_);
+			};
+			namespace Arguments
+			{
+				class Bare:
+					public Argument
+				{
+				protected:
+					const Reference<Schema> resultSchema;
+				public:
+					inline Bare(const Reference<Bare>& this_, const Reference<Algorithm>& algorithm_, const Reference<Schema>& resultSchema_);
+				public:
+					inline Reference<Schema> GetResultSchema() const;
+				};
+				// class Brace;
+				// class Placement;
+			}
 		}
 
 		class Scaner
@@ -237,8 +270,8 @@ namespace Translator
 			Reference<Markers::Schema> Prepare(const Reference<Structure::Markers::Schema>& structureSchema_, const Reference<Markers::Scope>& scope_);
 			Reference<Markers::Unit> Prepare(const Reference<Structure::Markers::Unit>& structureUnit_, const Reference<Markers::Scope>& scope_);
 		protected:
-			bool Scan_Schema(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Markers::Scope>& scope_, const Reference<Structure::Markers::Scope>& structureScope_);
-			bool Scan_SchemaDefinition(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Markers::Scope>& scope_, const Reference<Structure::Markers::Scope>& structureScope_);
+			Reference<Markers::Schema> Scan_Schema(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Markers::Scope>& scope_, const Reference<Structure::Markers::Scope>& structureScope_);
+			Reference<Markers::Schema> Scan_SchemaDefinition(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Markers::Scope>& scope_, const Reference<Structure::Markers::Scope>& structureScope_);
 			bool Scan_SchemaContent(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Markers::Schema>& schema_, const Reference<Structure::Markers::Schema>& structureSchema_);
 
 			bool Scan_AlgorithmDefinition(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Markers::Schema>& schema_, const Reference<Structure::Markers::Schema>& structureSchema_);
@@ -536,6 +569,52 @@ inline Translator::Functional::Markers::Algorithm::Algorithm(const Reference<Alg
 inline Translator::Reference<Translator::Functional::Markers::Schema> Translator::Functional::Markers::Algorithm::GetSchema() const
 {
 	return Move(MakeReference(schema));
+}
+inline Translator::Reference<Translator::Functional::Markers::Argument> Translator::Functional::Markers::Algorithm::GetArgument() const
+{
+	return argument;
+}
+inline void Translator::Functional::Markers::Algorithm::SetArgument(const Reference<Argument>& argument_)
+{
+	if(argument_)
+	{
+		if(!argument)
+		{
+			argument = argument_;
+		}
+		else
+		{
+			throw Exception("Attempt to set argument twice");
+		}
+	}
+	else
+	{
+		throw Exception("Attempt to set empty argument");
+	}
+}
+
+#pragma endregion
+
+#pragma region Argument
+
+inline Translator::Functional::Markers::Argument::Argument(const Reference<Argument>& this_, const Reference<Algorithm>& algorithm_):
+	Marker(this_),
+	algorithm(algorithm_)
+{
+}
+
+#pragma endregion
+
+#pragma region Arguments
+
+inline Translator::Functional::Markers::Arguments::Bare::Bare(const Reference<Bare>& this_, const Reference<Algorithm>& algorithm_, const Reference<Schema>& resultSchema_):
+	Argument(this_, algorithm_),
+	resultSchema(resultSchema_)
+{
+}
+inline Translator::Reference<Translator::Functional::Markers::Schema> Translator::Functional::Markers::Arguments::Bare::GetResultSchema() const
+{
+	return resultSchema;
 }
 
 #pragma endregion
