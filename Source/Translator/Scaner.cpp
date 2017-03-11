@@ -30,7 +30,7 @@ void Translator::Structure::Markers::Schema::ResetNaming()
 
 #pragma region Scaner
 
-bool Translator::Structure::Scaner::Scan_Schema(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Structure::Markers::Scope>& scope_)
+bool Translator::Structure::Scaner::Scan_Schema(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Markers::Scope>& scope_)
 {
 	auto o = it_;
 
@@ -46,7 +46,7 @@ bool Translator::Structure::Scaner::Scan_Schema(const TokensVector& tokens_, Tok
 	it_ = o;
 	return false;
 }
-bool Translator::Structure::Scaner::Scan_SchemaDefinition(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Structure::Markers::Scope>& scope_)
+bool Translator::Structure::Scaner::Scan_SchemaDefinition(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Markers::Scope>& scope_)
 {
 	auto o = it_;
 
@@ -64,7 +64,7 @@ bool Translator::Structure::Scaner::Scan_SchemaDefinition(const TokensVector& to
 			}
 		}
 
-		auto schema = Make<Structure::Markers::Schema>(scope_);
+		auto schema = Make<Structure::Markers::Schema>();
 
 		if(auto specialSemicolon = Move(Tokens::RequireSpecial(tokens_, it_, Tokens::Special::Type::Semicolon)))
 		{
@@ -97,7 +97,7 @@ bool Translator::Structure::Scaner::Scan_SchemaDefinition(const TokensVector& to
 	it_ = o;
 	return false;
 }
-bool Translator::Structure::Scaner::Scan_SchemaContent(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Structure::Markers::Schema>& schema_)
+bool Translator::Structure::Scaner::Scan_SchemaContent(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Markers::Schema>& schema_)
 {
 	auto o = it_;
 
@@ -114,7 +114,7 @@ bool Translator::Structure::Scaner::Scan_SchemaContent(const TokensVector& token
 	return false;
 }
 
-bool Translator::Structure::Scaner::Scan_AlgorithmDefinition(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Structure::Markers::Schema>& schema_)
+bool Translator::Structure::Scaner::Scan_AlgorithmDefinition(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Markers::Schema>& schema_)
 {
 	auto o = it_;
 
@@ -127,14 +127,14 @@ bool Translator::Structure::Scaner::Scan_AlgorithmDefinition(const TokensVector&
 	it_ = o;
 	return false;
 }
-bool Translator::Structure::Scaner::Scan_BareAlgorithmDefinition(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Structure::Markers::Schema>& schema_)
+bool Translator::Structure::Scaner::Scan_BareAlgorithmDefinition(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Markers::Schema>& schema_)
 {
 	auto o = it_;
 
 	if(auto keywordAlgorithm = Move(Tokens::RequireKeyword(tokens_, it_, Tokens::Keyword::Type::Algorithm)))
 	{
 		auto index = schema_->GenerateIndex();
-		auto algorithm = Make<Structure::Markers::Algorithm>(schema_);
+		auto algorithm = Make<Markers::Algorithm>();
 
 		// Stub declaration
 		if(auto specialSemicolon = Move(Tokens::RequireSpecial(tokens_, it_, Tokens::Special::Type::Semicolon)))
@@ -179,7 +179,7 @@ bool Translator::Structure::Scaner::Scan_BareAlgorithmDefinition(const TokensVec
 	return false;
 }
 
-bool Translator::Structure::Scaner::Scan_Body(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Structure::Markers::Algorithm>& algorithm_)
+bool Translator::Structure::Scaner::Scan_Body(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Markers::Algorithm>& algorithm_)
 {
 	auto o = it_;
 
@@ -215,7 +215,7 @@ bool Translator::Structure::Scaner::Scan_Body(const TokensVector& tokens_, Token
 	it_ = o;
 	return false;
 }
-bool Translator::Structure::Scaner::Scan_BodyContent(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Structure::Markers::Algorithm>& algorithm_)
+bool Translator::Structure::Scaner::Scan_BodyContent(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Markers::Algorithm>& algorithm_)
 {
 	auto o = it_;
 
@@ -232,7 +232,7 @@ bool Translator::Structure::Scaner::Scan_BodyContent(const TokensVector& tokens_
 Translator::Reference<Translator::Structure::Markers::Scope> Translator::Structure::Scaner::Scan(const TokensVector& tokens_)
 {
 	auto it = tokens_.cbegin();
-	auto scope = Make<Structure::Markers::Scope>(nullptr);
+	auto scope = Make<Structure::Markers::Scope>();
 
 	while(Scan_SchemaDefinition(tokens_, it, scope));
 
@@ -250,61 +250,53 @@ Translator::Reference<Translator::Structure::Markers::Scope> Translator::Structu
 
 #pragma region Functional
 
-#pragma region Markers
+#pragma region Scaner
 
-#pragma endregion
-
-#pragma region Scanner
-
-Translator::Reference<Translator::Functional::Markers::Algorithm> Translator::Functional::Scaner::Prepare(const Reference<Structure::Markers::Algorithm>& structureAlgorithm_, const Reference<Markers::Schema>& schema_)
+void Translator::Functional::Scaner::Prepare(const Reference<Structure::Markers::Scope>& structureScope_, const Reference<Markers::Scope>& scope_)
 {
-	auto algorithm = Make<Markers::Algorithm>(schema_);
-
-	for(auto &structureUnit : structureAlgorithm_->GetUnits())
+	for(auto &node : structureScope_->GetUnits())
 	{
-		auto name = structureUnit.first;
-		auto unit = Prepare(structureUnit.second, algorithm);
+		auto &name = node.first;
+		auto &structureUnit = node.second;
 
-		algorithm->Add(name, unit);
+		auto unit = Prepare(structureUnit, scope_);
+		scope_->Add(name, unit);
 	}
-
-	return algorithm; // TODO:
-}
-Translator::Reference<Translator::Functional::Markers::Schema> Translator::Functional::Scaner::Prepare(const Reference<Structure::Markers::Schema>& structureSchema_, const Reference<Markers::Scope>& scope_)
-{
-	auto schema = Make<Functional::Markers::Schema>(scope_);
-
-	for(auto &structureUnit : structureSchema_->GetUnits())
-	{
-		auto name = structureUnit.first;
-		auto unit = Prepare(structureUnit.second, schema);
-
-		// schema->Add(name, unit); // Visual Studio BUG
-		schema->Scope::Add(name, unit);
-	}
-
-	for(auto &structureAlgorithm : structureSchema_->GetAlgorithms())
-	{
-		auto index = structureAlgorithm.first;
-		auto algorithm = Prepare(structureAlgorithm.second, schema);
-
-		schema->Add(index, algorithm);
-	}
-	// TODO
-
-	return schema;
 }
 Translator::Reference<Translator::Functional::Markers::Unit> Translator::Functional::Scaner::Prepare(const Reference<Structure::Markers::Unit>& structureUnit_, const Reference<Markers::Scope>& scope_)
 {
-	if(auto structureSchema = Translator::UpCast<Translator::Structure::Markers::Schema>(structureUnit_))
+	if(auto structureSchema = UpCast<Structure::Markers::Schema>(structureUnit_))
 	{
 		return Prepare(structureSchema, scope_);
 	}
 
-	// TODO
-
-	return nullptr;
+	throw Exception();
 }
+Translator::Reference<Translator::Functional::Markers::Schema> Translator::Functional::Scaner::Prepare(const Reference<Structure::Markers::Schema>& structureSchema_, const Reference<Markers::Scope>& scope_)
+{
+	auto schema = Make<Markers::Schema>(scope_);
+
+	Prepare(Cast<Structure::Markers::Scope>(structureSchema_), Cast<Markers::Scope>(schema));
+
+	for(auto &node : structureSchema_->GetAlgorithms())
+	{
+		auto &index = node.first;
+		auto &structureAlgorithm = node.second;
+
+		auto algorithmStub = Make<Markers::AlgorithmStub>();
+		
+		Prepare(structureAlgorithm, algorithmStub);
+
+		schema->Add(index, algorithmStub);
+	}
+
+	return Move(schema);
+}
+void Translator::Functional::Scaner::Prepare(const Reference<Structure::Markers::Algorithm>& structureAlgorithm_, const Reference<Markers::AlgorithmStub>& algorithmStub_)
+{
+	Prepare(Cast<Structure::Markers::Scope>(structureAlgorithm_), Cast<Markers::Scope>(algorithmStub_));
+}
+
 
 Translator::Reference<Translator::Functional::Markers::Schema> Translator::Functional::Scaner::Scan_Schema(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Markers::Scope>& scope_, const Reference<Structure::Markers::Scope>& structureScope_)
 {
@@ -318,15 +310,9 @@ Translator::Reference<Translator::Functional::Markers::Schema> Translator::Funct
 	{
 		auto name = identifier->GetName();
 
-		if(scope_->IsUnit(name))
+		if(auto schema = UpCast<Markers::Schema>(scope_->Get(name)))
 		{
-			auto unit = scope_->Get(name);
-			auto schema = UpCast<Markers::Schema>(unit);
 			return schema;
-		}
-		else
-		{
-			return false;
 		}
 	}
 
@@ -351,15 +337,13 @@ Translator::Reference<Translator::Functional::Markers::Schema> Translator::Funct
 			}
 		}
 
-		auto structureUnit = structureScope_->GetOwned(name);
-		if(auto structureSchema = UpCast<Structure::Markers::Schema>(structureUnit))
+		// auto schema = Make<Structure::Markers::Schema>();
+		if(auto structureSchema = UpCast<Structure::Markers::Schema>(structureScope_->GetOwned(name)))
 		{
 			structureSchema->ResetNaming();
 
-			auto unit = scope_->GetOwned(name);
-			if(auto schema = UpCast<Markers::Schema>(unit))
+			if(auto schema = UpCast<Markers::Schema>(scope_->GetOwned(name)))
 			{
-
 				if(auto specialSemicolon = Move(Tokens::RequireSpecial(tokens_, it_, Tokens::Special::Type::Semicolon)))
 				{
 					return schema;
@@ -385,12 +369,12 @@ Translator::Reference<Translator::Functional::Markers::Schema> Translator::Funct
 			}
 			else
 			{
-				throw Exception("There is no schema");
+				throw Exception();
 			}
 		}
 		else
 		{
-			throw Exception("There is no structure schema");
+			throw Exception();
 		}
 	}
 
@@ -414,54 +398,62 @@ bool Translator::Functional::Scaner::Scan_SchemaContent(const TokensVector& toke
 	return false;
 }
 
-bool Translator::Functional::Scaner::Scan_AlgorithmDefinition(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Markers::Schema>& schema_, const Reference<Structure::Markers::Schema>& structureSchema_)
+Translator::Reference<Translator::Functional::Markers::Algorithm> Translator::Functional::Scaner::Scan_AlgorithmDefinition(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Markers::Schema>& schema_, const Reference<Structure::Markers::Schema>& structureSchema_)
 {
 	auto o = it_;
 
-	if(Scan_BareAlgorithmDefinition(tokens_, it_, schema_, structureSchema_))
+	if(auto bareAlgorithmDefinition = Scan_BareAlgorithmDefinition(tokens_, it_, schema_, structureSchema_))
 	{
-		return true;
+		return bareAlgorithmDefinition;
 	}
 	// TODO
 
 	it_ = o;
 	return false;
 }
-bool Translator::Functional::Scaner::Scan_BareAlgorithmDefinition(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Markers::Schema>& schema_, const Reference<Structure::Markers::Schema>& structureSchema_)
+Translator::Reference<Translator::Functional::Markers::Algorithm> Translator::Functional::Scaner::Scan_BareAlgorithmDefinition(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Markers::Schema>& schema_, const Reference<Structure::Markers::Schema>& structureSchema_)
 {
 	auto o = it_;
 
 	if(auto keywordAlgorithm = Move(Tokens::RequireKeyword(tokens_, it_, Tokens::Keyword::Type::Algorithm)))
 	{
 		auto index = structureSchema_->GenerateIndex();
-
 		if(auto structureAlgorithm = structureSchema_->GetOwned(index))
 		{
 			structureAlgorithm->ResetNaming();
 
-			if(auto algorithm = schema_->GetOwned(index))
+			if(auto algorithmStub = schema_->GetOwned(index))
 			{
-				// Stub declaration
-				if(auto specialSemicolon = Move(Tokens::RequireSpecial(tokens_, it_, Tokens::Special::Type::Semicolon)))
-				{
-					return true;
-				}
+				// // Stub declaration
+				// if(auto specialSemicolon = Move(Tokens::RequireSpecial(tokens_, it_, Tokens::Special::Type::Semicolon)))
+				// {
+				// 	auto algorithm = Make<Markers::Algorithm>(schema_, algorithmStub, nullptr);
+				// 
+				// 	// auto key = 
+				// 	// 
+				// 	// schema_->Add
+				// 
+				// 	return algorithm;
+				// }
+				// throw Exception(); // temporal
 
 				if(auto resultSchema = Scan_Schema(tokens_, it_, schema_, structureSchema_))
 				{
-					auto argument = Make<Markers::Arguments::Bare>(algorithm, resultSchema);
-					algorithm->SetArgument(argument);
+					auto key = Markers::Schema::BareKey{resultSchema};
+					auto bareAlgorithm = Make<Markers::Algorithms::Bare>(schema_, algorithmStub, resultSchema);
 
-					if(Scan_Body(tokens_, it_, algorithm, structureAlgorithm))
+					schema_->Add(key, bareAlgorithm);
+
+					if(Scan_Body(tokens_, it_, bareAlgorithm, structureAlgorithm))
 					{
-						return true;
+						return bareAlgorithm;
 					}
 					else
 					{
 						// Semi-full declaration
 						if(auto specialSemicolon = Move(Tokens::RequireSpecial(tokens_, it_, Tokens::Special::Type::Semicolon)))
 						{
-							return true;
+							return bareAlgorithm;
 						}
 						else
 						{
@@ -485,11 +477,11 @@ bool Translator::Functional::Scaner::Scan_BareAlgorithmDefinition(const TokensVe
 			throw Exception();
 		}
 	}
-	// TODO
 
 	it_ = o;
-	return false;
+	return nullptr;
 }
+
 bool Translator::Functional::Scaner::Scan_Body(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Markers::Algorithm>& algorithm_, const Reference<Structure::Markers::Algorithm>& structureAlgorithm_)
 {
 	auto o = it_;
@@ -540,25 +532,16 @@ bool Translator::Functional::Scaner::Scan_BodyContent(const TokensVector& tokens
 }
 
 
-void Translator::Functional::Scaner::Scan(const TokensVector& tokens_, const Reference<Structure::Markers::Scope> structureScope_)
+void Translator::Functional::Scaner::Scan(const TokensVector& tokens_, const Reference<Structure::Markers::Scope>& structureScope_)
 {
 	auto it = tokens_.cbegin();
-	auto scope = Make<Functional::Markers::Scope>(nullptr);
+	auto scope = Make<Markers::Scope>(nullptr);
 
-	// Prepare
-	for(auto &structureUnit : structureScope_->GetUnits())
-	{
-		auto name = structureUnit.first;
-		auto unit = Prepare(structureUnit.second, scope);
+	Prepare(structureScope_, scope);
 
-		scope->Add(name, unit);
-	}
-
-	// Scan
 	structureScope_->ResetNaming();
 	while(Scan_SchemaDefinition(tokens_, it, scope, structureScope_));
 
-	// Check for errors
 	if(it != tokens_.cend())
 	{
 		throw Exception();

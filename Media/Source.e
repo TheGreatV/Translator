@@ -1,14 +1,17 @@
 .schema;
+.schema {}
 .schema {
-	.algorithm;
 	.algorithm A;
-	.algorithm A .body {
-		.schema;
-	}
 	.algorithm .schema; .body;
 	.algorithm .schema #; .body;
+	.algorithm .schema;;
+	.algorithm .schema{}; 
+	.algorithm .schema{} .body;
+	.algorithm .schema{
+		.schema;
+	} .body;
 	.algorithm .schema {
-		.schema { .algorithm; }
+		.schema { .algorithm .schema;; }
 	} .body;
 }
 .schema { .schema A {} }
