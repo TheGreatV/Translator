@@ -3,6 +3,7 @@
 
 #include <Translator/Lexer.hpp>
 #include <Translator/Scaner.hpp>
+#include <Translator/Parser.hpp>
 using namespace Translator;
 
 
@@ -22,7 +23,10 @@ void main()
 	auto structureScope = structureScaner.Scan(tokens);
 
 	Functional::Scaner functionalScaner;
-	functionalScaner.Scan(tokens, structureScope);
+	auto functionalScope = functionalScaner.Scan(tokens, structureScope);
+
+	Parser parser;
+	auto scope = parser.Parse(tokens, functionalScope);
 
 	std::system("pause");
 }

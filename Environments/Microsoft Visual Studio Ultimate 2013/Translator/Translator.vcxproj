@@ -68,11 +68,13 @@
   <ItemGroup>
     <ClCompile Include="..\..\..\Source\Translator\Header.cpp" />
     <ClCompile Include="..\..\..\Source\Translator\Lexer.cpp" />
+    <ClCompile Include="..\..\..\Source\Translator\Parser.cpp" />
     <ClCompile Include="..\..\..\Source\Translator\Scaner.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\Source\Translator\Header.hpp" />
     <ClInclude Include="..\..\..\Source\Translator\Lexer.hpp" />
+    <ClInclude Include="..\..\..\Source\Translator\Parser.hpp" />
     <ClInclude Include="..\..\..\Source\Translator\Scaner.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

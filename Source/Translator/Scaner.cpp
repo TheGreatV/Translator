@@ -260,6 +260,7 @@ void Translator::Functional::Scaner::Prepare(const Reference<Structure::Markers:
 		auto &structureUnit = node.second;
 
 		auto unit = Prepare(structureUnit, scope_);
+
 		scope_->Add(name, unit);
 	}
 }
@@ -424,19 +425,6 @@ Translator::Reference<Translator::Functional::Markers::Algorithm> Translator::Fu
 
 			if(auto algorithmStub = schema_->GetOwned(index))
 			{
-				// // Stub declaration
-				// if(auto specialSemicolon = Move(Tokens::RequireSpecial(tokens_, it_, Tokens::Special::Type::Semicolon)))
-				// {
-				// 	auto algorithm = Make<Markers::Algorithm>(schema_, algorithmStub, nullptr);
-				// 
-				// 	// auto key = 
-				// 	// 
-				// 	// schema_->Add
-				// 
-				// 	return algorithm;
-				// }
-				// throw Exception(); // temporal
-
 				if(auto resultSchema = Scan_Schema(tokens_, it_, schema_, structureSchema_))
 				{
 					auto key = Markers::Schema::BareKey{resultSchema};
@@ -532,7 +520,7 @@ bool Translator::Functional::Scaner::Scan_BodyContent(const TokensVector& tokens
 }
 
 
-void Translator::Functional::Scaner::Scan(const TokensVector& tokens_, const Reference<Structure::Markers::Scope>& structureScope_)
+Translator::Reference<Translator::Functional::Markers::Scope> Translator::Functional::Scaner::Scan(const TokensVector& tokens_, const Reference<Structure::Markers::Scope>& structureScope_)
 {
 	auto it = tokens_.cbegin();
 	auto scope = Make<Markers::Scope>(nullptr);
@@ -546,6 +534,8 @@ void Translator::Functional::Scaner::Scan(const TokensVector& tokens_, const Ref
 	{
 		throw Exception();
 	}
+
+	return Move(scope);
 }
 
 #pragma endregion

@@ -173,7 +173,7 @@ namespace Translator
 				public Marker
 			{
 			protected:
-				const Reference<Scope>& scope;
+				const Reference<Scope> scope;
 			public:
 				inline Unit(const Reference<Unit>& this_, const Reference<Scope>& scope_);
 				virtual ~Unit() override = default;
@@ -221,7 +221,7 @@ namespace Translator
 			public:
 				inline void Add(const Index& index_, const Reference<AlgorithmStub>& algorithmStub_);
 				inline Reference<AlgorithmStub> GetOwned(const Index& index_) const;
-				// inline const Algorithms& GetAlgorithms() const;
+				inline const BareAlgorithms& GetBareAlgorithms() const;
 			public:
 				inline void Add(const BareKey& key_, const Reference<Algorithms::Bare>& bareAlgorithm_);
 			};
@@ -240,6 +240,9 @@ namespace Translator
 				const Reference<Schema> resultSchema;
 			public:
 				inline Algorithm(const Reference<Algorithm>& this_, const Reference<Schema>& schema_, const Reference<AlgorithmStub>& algorithmStub_, const Reference<Schema> resultSchema_);
+			public:
+				inline Reference<Schema> GetSchema() const;
+				inline Reference<Schema> GetResultSchema() const;
 			};
 			namespace Algorithms
 			{
@@ -270,7 +273,7 @@ namespace Translator
 			bool Scan_Body(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Markers::Algorithm>& algorithm_, const Reference<Structure::Markers::Algorithm>& structureAlgorithm_);
 			bool Scan_BodyContent(const TokensVector& tokens_, TokensVector::const_iterator& it_, const Reference<Markers::Algorithm>& algorithm_, const Reference<Structure::Markers::Algorithm>& structureAlgorithm_);
 		public:
-			void Scan(const TokensVector& tokens_, const Reference<Structure::Markers::Scope>& structureScope_);
+			Reference<Markers::Scope> Scan(const TokensVector& tokens_, const Reference<Structure::Markers::Scope>& structureScope_);
 		};
 	}
 }
@@ -534,10 +537,10 @@ inline Translator::Reference<Translator::Functional::Markers::AlgorithmStub> Tra
 		throw Exception();
 	}
 }
-/*inline const Translator::Structure::Markers::Schema::Algorithms& Translator::Structure::Markers::Schema::GetAlgorithms() const
+inline const Translator::Functional::Markers::Schema::BareAlgorithms& Translator::Functional::Markers::Schema::GetBareAlgorithms() const
 {
-	return algorithms;
-}*/
+	return bareAlgorithms;
+}
 
 inline void Translator::Functional::Markers::Schema::Add(const BareKey& key_, const Reference<Algorithms::Bare>& bareAlgorithm_)
 {
@@ -550,17 +553,6 @@ inline void Translator::Functional::Markers::Schema::Add(const BareKey& key_, co
 		throw Exception();
 	}
 }
-// inline void Translator::Functional::Markers::Schema::Add(const AlgorithmKey& key_, const Reference<Algorithm>& algorithm_)
-// {
-// 	if(algorithms.find(key_) == algorithms.end())
-// 	{
-// 		algorithms[key_] = algorithm_;
-// 	}
-// 	else
-// 	{
-// 		throw Exception();
-// 	}
-// }
 
 #pragma endregion
 
@@ -588,6 +580,15 @@ inline Translator::Functional::Markers::Algorithm::Algorithm(const Reference<Alg
 		Add(name, unit);
 	}
 }
+inline Translator::Reference<Translator::Functional::Markers::Schema> Translator::Functional::Markers::Algorithm::GetSchema() const
+{
+	return schema;
+}
+inline Translator::Reference<Translator::Functional::Markers::Schema> Translator::Functional::Markers::Algorithm::GetResultSchema() const
+{
+	return resultSchema;
+}
+
 
 #pragma endregion
 
