@@ -7,7 +7,6 @@
 
 namespace Translator
 {
-	/*
 	class Instruction;
 	namespace Instructions
 	{
@@ -84,9 +83,12 @@ namespace Translator
 		{
 		protected:
 			const Link<Schema> schema;
-			const Link<Schema> resultSchema;
 		public:
-			inline Algorithm(const Reference<Algorithm>& this_, const Reference<Schema>& schema_, const Reference<Schema>& resultSchema_);
+			Link<Schema> resultSchema = Reference<Schema>(nullptr); // TODO: protected + setter
+		public:
+			inline Algorithm(const Reference<Algorithm>& this_, const Reference<Schema>& schema_);
+		public:
+			inline Reference<Schema> GetSchema() const;
 		};
 		namespace Algorithms
 		{
@@ -94,7 +96,7 @@ namespace Translator
 				public Algorithm
 			{
 			public:
-				inline Bare(const Reference<Algorithm>& this_, const Reference<Schema>& schema_, const Reference<Schema>& resultSchema_);
+				inline Bare(const Reference<Algorithm>& this_, const Reference<Schema>& schema_);
 			};
 		}
 	}
@@ -102,26 +104,28 @@ namespace Translator
 	class Parser
 	{
 	protected:
-		Dictionary<Reference<Functional::Markers::Schema>, Reference<Instructions::Schema>> schemaBindingTable;
+		Dictionary<Reference<Algorithmic::Schema>, Reference<Instructions::Schema>> schemasTable;
+		Dictionary<Reference<Instructions::Schema>, Vector<Reference<Instructions::Algorithm>>> schemasAlgorithms;
+		Dictionary<Reference<Instructions::Algorithm>, Reference<Algorithmic::Algorithm>> algorithmsTable;
 	protected:
-		void PrepareStructure(const Reference<Functional::Markers::Scope>& functionalScope_, const Reference<Instructions::Scope>& scope_);
-		Reference<Instructions::Unit> PrepareStructure(const Reference<Functional::Markers::Unit>& functionalUnit_, const Reference<Functional::Markers::Scope>& functionalScope_, const Reference<Instructions::Scope>& scope_);
-		Reference<Instructions::Schema> PrepareStructure(const Reference<Functional::Markers::Schema>& functionalSchema_, const Reference<Functional::Markers::Scope>& functionalScope_, const Reference<Instructions::Scope>& scope_);
+		void PrepareSchematical(const Reference<Instructions::Scope>& scope_, const Reference<Algorithmic::Scope>& algorithmicScope_);
+		Reference<Instructions::Unit> PrepareSchematical(const Reference<Algorithmic::Unit>& algorithmicUnit_, const Reference<Instructions::Scope>& parentScope_);
+		Reference<Instructions::Schema> PrepareSchematical(const Reference<Algorithmic::Schema>& algorithmicSchema_, const Reference<Instructions::Scope>& parentScope_);
+		Reference<Instructions::Algorithms::Bare> PrepareSchematical(const Reference<Algorithmic::Algorithms::Bare>& algorithmicAlgorithm_, const Reference<Instructions::Schema>& parentSchema_);
 	protected:
-		void PrepareFunctional(const Reference<Instructions::Scope>& scope_, const Reference<Functional::Markers::Scope>& functionalScope_);
-		void PrepareFunctional(const Reference<Instructions::Unit>& unit_, const Reference<Functional::Markers::Unit>& functionalUnit_);
-		void PrepareFunctional(const Reference<Instructions::Schema>& schema_, const Reference<Functional::Markers::Schema>& functionalSchema_);
-		void PrepareFunctional(const Reference<Functional::Markers::Algorithms::Bare>& functionalAlgorithm_, const Reference<Instructions::Schema>& schema_, const Reference<Functional::Markers::Schema>& functionalSchema_);
+		void PrepareAlgorithmical(const Reference<Instructions::Scope>& scope_);
+		void PrepareAlgorithmical(const Reference<Instructions::Unit>& unit_);
+		void PrepareAlgorithmical(const Reference<Instructions::Schema>& schema_);
+		void PrepareAlgorithmical(const Reference<Instructions::Algorithm>& algorithm_);
+		void PrepareAlgorithmical(const Reference<Instructions::Algorithms::Bare>& algorithm_);
 	public:
-		Reference<Instructions::Scope> Parse(const TokensVector& tokens_, const Reference<Functional::Markers::Scope>& functionalScope_);
+		Reference<Instructions::Scope> Parse(const Reference<Algorithmic::Scope>& algorithmicScope_);
 	};
-	*/
 }
 
 
 #pragma region Translator
 
-/*
 #pragma region Instruction
 
 inline Translator::Instruction::Instruction(const Reference<Instruction>& this_):
@@ -191,10 +195,14 @@ inline void Translator::Instructions::Schema::Add(const BareKey& key_, const Ref
 
 #pragma region Algorithm
 
-inline Translator::Instructions::Algorithm::Algorithm(const Reference<Algorithm>& this_, const Reference<Schema>& schema_, const Reference<Schema>& resultSchema_):
+inline Translator::Instructions::Algorithm::Algorithm(const Reference<Algorithm>& this_, const Reference<Schema>& schema_):
 	Scope(this_, Cast<Scope>(schema_)),
 	schema(schema_)
 {
+}
+inline Translator::Reference<Translator::Instructions::Schema> Translator::Instructions::Algorithm::GetSchema() const
+{
+	return MakeReference(schema);
 }
 
 #pragma endregion
@@ -203,8 +211,8 @@ inline Translator::Instructions::Algorithm::Algorithm(const Reference<Algorithm>
 
 #pragma region Bare
 
-inline Translator::Instructions::Algorithms::Bare::Bare(const Reference<Algorithm>& this_, const Reference<Schema>& schema_, const Reference<Schema>& resultSchema_):
-	Algorithm(this_, schema_, resultSchema_)
+inline Translator::Instructions::Algorithms::Bare::Bare(const Reference<Algorithm>& this_, const Reference<Schema>& schema_):
+	Algorithm(this_, schema_)
 {
 }
 
@@ -217,7 +225,6 @@ inline Translator::Instructions::Algorithms::Bare::Bare(const Reference<Algorith
 #pragma region Parser
 
 #pragma endregion
-*/
 
 #pragma endregion
 

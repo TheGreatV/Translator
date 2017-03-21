@@ -3,9 +3,9 @@
 
 #pragma region Translator
 
-/*
 #pragma region Parser
 
+/*
 void Translator::Parser::PrepareStructure(const Reference<Functional::Markers::Scope>& functionalScope_, const Reference<Instructions::Scope>& scope_)
 {
 	for(auto &node : functionalScope_->GetUnits())
@@ -90,15 +90,125 @@ void Translator::Parser::PrepareFunctional(const Reference<Functional::Markers::
 	PrepareStructure(Cast<Functional::Markers::Scope>(functionalAlgorithm_), Cast<Instructions::Scope>(algorithm));
 
 	schema_->Add({resultSchema}, algorithm);
+}*/
+
+void Translator::Parser::PrepareSchematical(const Reference<Instructions::Scope>& scope_, const Reference<Algorithmic::Scope>& algorithmicScope_)
+{
+	for(auto &node : algorithmicScope_->GetUnits())
+	{
+		auto &name = node.first;
+		auto &algorithmicUnit = node.second;
+
+		auto unit = Move(PrepareSchematical(algorithmicUnit, scope_));
+
+		scope_->Add(name, unit);
+	}
+}
+Translator::Reference<Translator::Instructions::Unit> Translator::Parser::PrepareSchematical(const Reference<Algorithmic::Unit>& algorithmicUnit_, const Reference<Instructions::Scope>& parentScope_)
+{
+	if(auto algorithmicSchema = Move(UpCast<Algorithmic::Schema>(algorithmicUnit_)))
+	{
+		auto schema = PrepareSchematical(algorithmicSchema, parentScope_);
+		return schema;
+	}
+
+	throw Exception();
+}
+Translator::Reference<Translator::Instructions::Schema> Translator::Parser::PrepareSchematical(const Reference<Algorithmic::Schema>& algorithmicSchema_, const Reference<Instructions::Scope>& parentScope_)
+{
+	auto schema = Make<Instructions::Schema>(parentScope_);
+
+	schemasTable[algorithmicSchema_] = schema;
+
+	PrepareSchematical(Cast<Instructions::Scope>(schema), Cast<Algorithmic::Scope>(algorithmicSchema_));
+
+	for(auto &node : algorithmicSchema_->GetBareAlgorithms())
+	{
+		auto &key = node.first;
+		auto &algorithmicAlgorithm = node.second;
+
+		auto algorithm = Move(PrepareSchematical(algorithmicAlgorithm, schema));
+
+		schemasAlgorithms[schema].push_back(algorithm);
+	}
+
+	return schema;
+}
+Translator::Reference<Translator::Instructions::Algorithms::Bare> Translator::Parser::PrepareSchematical(const Reference<Algorithmic::Algorithms::Bare>& algorithmicAlgorithm_, const Reference<Instructions::Schema>& parentSchema_)
+{
+	auto algorithm = Move(Make<Instructions::Algorithms::Bare>(parentSchema_));
+
+	algorithmsTable[algorithm] = algorithmicAlgorithm_;
+
+	PrepareSchematical(Cast<Instructions::Scope>(algorithm), algorithmicAlgorithm_->algorithmScope);
+
+	return algorithm;
 }
 
-Translator::Reference<Translator::Instructions::Scope> Translator::Parser::Parse(const TokensVector& tokens_, const Reference<Functional::Markers::Scope>& functionalScope_)
+void Translator::Parser::PrepareAlgorithmical(const Reference<Instructions::Scope>& scope_)
 {
-	auto it = tokens_.cbegin();
-	auto scope = Make<Instructions::Scope>(nullptr);
+	for(auto &node : scope_->GetUnits())
+	{
+		auto &name = node.first;
+		auto &unit = node.second;
 
-	PrepareStructure(functionalScope_, scope);
-	PrepareFunctional(scope, functionalScope_);
+		PrepareAlgorithmical(unit);
+	}
+}
+void Translator::Parser::PrepareAlgorithmical(const Reference<Instructions::Unit>& unit_)
+{
+	if(auto schema = Move(UpCast<Instructions::Schema>(unit_)))
+	{
+		PrepareAlgorithmical(schema);
+	}
+	else
+	{
+		throw Exception();
+	}
+}
+void Translator::Parser::PrepareAlgorithmical(const Reference<Instructions::Schema>& schema_)
+{
+	PrepareAlgorithmical(Cast<Instructions::Scope>(schema_));
+
+	auto &bareAlgorithms = schemasAlgorithms[schema_];
+
+	for(auto &bareAlgorithm : bareAlgorithms)
+	{
+		PrepareAlgorithmical(bareAlgorithm);
+	}
+}
+void Translator::Parser::PrepareAlgorithmical(const Reference<Instructions::Algorithm>& algorithm_)
+{
+	if(auto bareAlgorithm = UpCast<Instructions::Algorithms::Bare>(algorithm_))
+	{
+		PrepareAlgorithmical(bareAlgorithm);
+	}
+	else
+	{
+		throw Exception();
+	}
+}
+void Translator::Parser::PrepareAlgorithmical(const Reference<Instructions::Algorithms::Bare>& algorithm_)
+{
+	auto algorithmicAlgorithm = algorithmsTable[algorithm_];
+
+	auto algorithmicResultSchema = algorithmicAlgorithm->GetResultSchema();
+	auto resultSchema = schemasTable[algorithmicResultSchema];
+
+	algorithm_->resultSchema = resultSchema;
+
+	auto parentSchema = algorithm_->GetSchema();
+	parentSchema->Add(Instructions::Schema::BareKey{resultSchema}, algorithm_);
+
+	PrepareAlgorithmical(Cast<Instructions::Scope>(algorithm_));
+}
+
+Translator::Reference<Translator::Instructions::Scope> Translator::Parser::Parse(const Reference<Algorithmic::Scope>& algorithmicScope_)
+{
+	auto scope = Move(Make<Instructions::Scope>(nullptr));
+
+	PrepareSchematical(scope, algorithmicScope_);
+	PrepareAlgorithmical(scope);
 
 	// TODO
 
@@ -106,7 +216,6 @@ Translator::Reference<Translator::Instructions::Scope> Translator::Parser::Parse
 }
 
 #pragma endregion
-*/
 
 #pragma endregion
 

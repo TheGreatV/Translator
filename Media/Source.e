@@ -16,9 +16,9 @@
 	.algorithm 2 .body {} `/ Full bare algorithm with full body
 	
 	.algorithm .schema;; `/ Algorithm with placement stub schema
-	.algorithm .schema{}; `/ Algorithm with placement full schema
+	.algorithm .schema {}; `/ Algorithm with placement full schema
 	
-	.algorithm 3 .body{
+	.algorithm 3 .body {
 		.schema; `/ Unnamed nested stub schema inside algorithm
 		.schema 4; `/ Named nested stub schema inside algorithm
 		.schema {} `/ Unnamed nested full schema inside algorithm

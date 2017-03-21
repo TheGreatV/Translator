@@ -25,14 +25,8 @@ void main()
 	Algorithmic::Scaner algorithmicScaner;
 	auto algorithmicScope = algorithmicScaner.Scan(schematicScope);
 
-	// Structure::Scaner structureScaner;
-	// auto structureScope = structureScaner.Scan(tokens);
-	// 
-	// Functional::Scaner functionalScaner;
-	// auto functionalScope = functionalScaner.Scan(tokens, structureScope);
-	// 
-	// Parser parser;
-	// auto scope = parser.Parse(tokens, functionalScope);
+	Parser parser;
+	auto scope = parser.Parse(algorithmicScope);
 
 	std::system("pause");
 }
