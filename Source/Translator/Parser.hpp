@@ -7,6 +7,7 @@
 
 namespace Translator
 {
+	/*
 	class Instruction;
 	namespace Instructions
 	{
@@ -114,11 +115,13 @@ namespace Translator
 	public:
 		Reference<Instructions::Scope> Parse(const TokensVector& tokens_, const Reference<Functional::Markers::Scope>& functionalScope_);
 	};
+	*/
 }
 
 
 #pragma region Translator
 
+/*
 #pragma region Instruction
 
 inline Translator::Instruction::Instruction(const Reference<Instruction>& this_):
@@ -214,6 +217,7 @@ inline Translator::Instructions::Algorithms::Bare::Bare(const Reference<Algorith
 #pragma region Parser
 
 #pragma endregion
+*/
 
 #pragma endregion
 

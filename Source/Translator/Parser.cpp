@@ -3,6 +3,7 @@
 
 #pragma region Translator
 
+/*
 #pragma region Parser
 
 void Translator::Parser::PrepareStructure(const Reference<Functional::Markers::Scope>& functionalScope_, const Reference<Instructions::Scope>& scope_)
@@ -98,12 +99,14 @@ Translator::Reference<Translator::Instructions::Scope> Translator::Parser::Parse
 
 	PrepareStructure(functionalScope_, scope);
 	PrepareFunctional(scope, functionalScope_);
-	// 
+
+	// TODO
 
 	return Move(scope);
 }
 
 #pragma endregion
+*/
 
 #pragma endregion
 

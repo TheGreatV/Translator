@@ -1,42 +1,30 @@
-.schema;
-.schema {}
-.schema {
-	.algorithm A;
-	.algorithm .schema; .body;
-	.algorithm .schema #; .body;
-	.algorithm .schema;;
-	.algorithm .schema{}; 
-	.algorithm .schema{} .body;
-	.algorithm .schema{
-		.schema;
-	} .body;
-	.algorithm .schema {
-		.schema { .algorithm .schema;; }
-	} .body;
-}
-.schema { .schema A {} }
-.schema A { .schema A { .schema A {} } }
+`/ All of the following should parse correctly
 
-`{
-.schema A {
-	.algorithm A .body {
-		.make a .of A;
+.schema; `/ Unnamed stub schema
+.schema 0; `/ Named stub schema
+
+.schema {} `/ Unnamed full schema
+
+.schema 1 { `/ Named full schema
+	.schema; `/ Unnamed nested stub schema
+	.schema 2; `/ Named nested stub schema
+	.schema {} `/ Unnamed nested full schema
+	.schema 3 {} `/ Named nested full schema
+	
+	.algorithm 0; `/ Stub bare algorithm
+	.algorithm 1 .body; `/ Full bare algorithm with stub body
+	.algorithm 2 .body {} `/ Full bare algorithm with full body
+	
+	.algorithm .schema;; `/ Algorithm with placement stub schema
+	.algorithm .schema{}; `/ Algorithm with placement full schema
+	
+	.algorithm 3 .body{
+		.schema; `/ Unnamed nested stub schema inside algorithm
+		.schema 4; `/ Named nested stub schema inside algorithm
+		.schema {} `/ Unnamed nested full schema inside algorithm
+		.schema 5 {} `/ Named nested full schema inside algorithm
 	}
 }
 
-.make A + -.make B;
 
-Parse:
-
-1. extract units
-%0 = .make A
-%1 = +
-%2 = -
-%3 = .make B
-
-%0 %1 %2 %3
-
-2. pick by priority
-
-}`
 
