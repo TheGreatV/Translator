@@ -1,43 +1,68 @@
+Rules:
+<identifier> - entity "identifier"
+"text" or 'text' - raw text
+a | b - a or b
+(a | b) | c - grouping
+[a] b - optional a
+{a} - 0 or more a
+* - anything
+
 Alphabet:
-<Digit> = "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9";
-<Letter> = "a" - "z" | "A" - "Z";
-<Glyph> = <Letter> | <Digit> | "_";
-<Symbol> = "~" | "@" | "#" | "$" | "%" | "^" | "&" | "*" | "-" | "+" | "<" | ">" | "?" | "/" | "|" | "\\";
+<Digit> = '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9';
+<Small letter> = 'a' | 'b' | 'c' | 'd' | 'e' | 'f' | 'g' | 'h' | 'i' | 'j' | 'k' | 'l' | 'm' | 'n' | 'o' | 'p' | 'q' | 'r' | 's' | 't' | 'u' | 'v' | 'w' | 'x' | 'y' | 'z';
+<Capital letter> = 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' | 'H' | 'I' | 'J' | 'K' | 'L' | 'M' | 'N' | 'O' | 'P' | 'Q' | 'R' | 'S' | 'T' | 'U' | 'V' | 'W' | 'X' | 'Y' | 'Z';
+<Letter> = <Small letter> | <Capital letter>;
+<Glyph> = <Letter> | <Digit> | '_';
+<Symbol> = '~' | '!' | '@' | '#' | '$' | '%' | '^' | '&' | '*' | '-' | '+' | '<' | '>' | '?' | '/' | '|' | '\\';
+<Special symbol> = '.' | ',' | ':' | ';' | '`';
+<Round brace> = '(' | ')';
+<Figure brace> = '{' | '}';
+<Square brace> = '[' | ']';
+<Opening brace> = '(' | '{' | '[';
+<Closing brace> = ')' | '}' | ']';
+<Brace> = <Round brace> | <Figure brace> | <Square brace>;
+
+
+Comments:
+<Line comment> = '`/' * '\n';
+<Block comment> = '`{' * '}`';
 
 
 Identifier:
 <Identifier> = (<Glyph> {<Glyph>}) | (<Symbol> {<Symbol>});
-<Named Object> = <Identifier> | <Block>;
 
 
-Keywords:
-<Keyword Block> = ".block";
-<Keyword Alias> = ".alias";
-<Keyword As> = ".as";
-<Keyword Schema> = ".schema";
-<Keyword Left> = ".left";
-<Keyword Right> = ".right";
+Naming:
+<Long identifier> = {':'} <Identifier> { {':'} <Identifier> };
+<Name declaration> = ".name" <Long identifier> [ ".as" <Entity> ];
+<Name> = <Long identifier> | <Name declaration>;
 
+<Entity> = <Name> | <Schema> | <Algorithm>;
 
-Block:
-<Block Definition> = <Unnamed Block Definition> | <Named Block Definition>;
-
-<Unnamed Block Definition> = "{" {<Instruction>} "}";
-<Named Block Definition> = <Keyword Block> <Identifier> <Unnamed Block Definition>;
+<Declaration> = <Name declaration> | <Schema declaration>;
 
 
 Schema:
-<Schema> = <Schema Declaration> | <Named Object>;
-<Schema Declaration> = <Keyword Schema> "{" "}";
+<Schema> = <Name> | <Schema declaration>;
+<Schema declaration> = ".schema" ( ';' | ('{' {<Schema content>} '}') );
+<Schema content> = <Declaration>;
 
 
-Alias:
-<Alias> = <Keyword Alias> <Identifier> <Keyword As> <Named Object>;
+Algorithm:
+<Algorithm> = <Bare algorithm>;
+
+<Bare algorithm> = <Bare algorithm declaration>;
+<Bare algorithm declaration> = ".algorithm" <Schema> ( ';' | <Body> );
+
+<Body> = ".body" ( ';' | ('{' {<Body content>} '}') );
+<Body content> = <Declaration>;
 
 
-Instruction:
-<Declaration> = <Schema Declaration>;
-<Definition> = <Block Definition>;
-<Instruction> = <Definition> | <Declaration>;
+
+
+
+
+
+
 
 
